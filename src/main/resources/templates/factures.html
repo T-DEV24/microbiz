@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Factures', 'Facturation', 'factures')">
+<div th:fragment="content">
+    <style>
+        .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+        .page-title { font-size:28px; font-weight:700; color:#111827; line-height:1.2; }
+        .page-sub { color:#6b7280; font-size:13px; margin-top:4px; }
+        .content { padding:24px; }
+        .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:16px; }
+        .card-header { padding:14px 16px; border-bottom:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center; }
+        .card-title { font-size:14px; font-weight:700; color:#1f2937; }
+        .card-body { padding:16px; }
+        .form-label-dark { font-size:12px; font-weight:600; color:#6b7280; margin-bottom:6px; display:block; }
+        .form-control-dark { width:100%; background:#fff; border:1px solid #d1d5db; border-radius:8px; padding:10px 12px; margin-bottom:10px; font-size:14px; }
+        .btn-submit { border:none; border-radius:8px; padding:10px 14px; font-size:13px; font-weight:600; background:#3b82f6; color:#fff; text-decoration:none; }
+        .action-btn { border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:8px; padding:6px 10px; font-size:12px; text-decoration:none; }
+        .btn-edit { border-color:#c7d2fe; color:#4338ca; background:#eef2ff; }
+        .alert-success { border:1px solid #bbf7d0; background:#f0fdf4; color:#166534; border-radius:10px; padding:10px 12px; margin-bottom:12px; }
+        .filters { display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+        table { width:100%; border-collapse:collapse; }
+        th, td { padding:10px 12px; border-bottom:1px solid #f1f5f9; font-size:14px; }
+        th { color:#6b7280; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+        .badge { padding:3px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+        .badge-brouillon { background:#eef2ff; color:#4338ca; }
+        .badge-envoyee { background:#ecfeff; color:#155e75; }
+        .badge-payee { background:#ecfdf5; color:#166534; }
+        .badge-impayee { background:#fff7ed; color:#9a3412; }
+        .badge-annulee { background:#fef2f2; color:#b91c1c; }
+        @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
+    </style>
+    <div class="topbar">
+        <div>
+            <div class="page-title">Factures</div>
+            <div class="page-sub" th:text="${facturesPage != null ? facturesPage.totalElements : #lists.size(factures)} + ' document(s)'">0 document(s)</div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
+        <div class="alert-success" style="background:#fef2f2;border-color:#fecaca;color:#b91c1c" th:if="${erreur}" th:text="${erreur}"></div>
+        <form class="filters" th:action="@{/factures}" method="get">
+            <input class="form-control-dark" style="max-width:220px;margin-bottom:0" type="text" name="q" th:value="${q}" placeholder="Client...">
+            <select class="form-control-dark" style="max-width:170px;margin-bottom:0" name="statut">
+                <option value="">Tous statuts</option>
+                <option th:each="s : ${statuts}" th:value="${s}" th:selected="${statut == s}" th:text="${s}"></option>
+            </select>
+            <input class="form-control-dark" style="max-width:170px;margin-bottom:0" type="date" name="debut" th:value="${debut}">
+            <input class="form-control-dark" style="max-width:170px;margin-bottom:0" type="date" name="fin" th:value="${fin}">
+            <input type="hidden" name="size" th:value="${size}">
+            <button class="action-btn btn-edit" type="submit">Filtrer</button>
+            <a class="action-btn" href="/factures">Reset</a>
+        </form>
+
+        <div class="grid-2">
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header"><div class="card-title">Nouveau document</div></div>
+                <div class="card-body">
+                    <form th:action="@{/factures}" method="post" th:object="${facture}">
+                        <label class="form-label-dark">Type</label>
+                        <select class="form-control-dark" th:field="*{type}">
+                            <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
+                        </select>
+
+                        <label class="form-label-dark">Nom client *</label>
+                        <input class="form-control-dark" th:field="*{clientNom}" placeholder="Ex : Marie Ngo" required>
+
+                        <label class="form-label-dark">Montant TTC *</label>
+                        <input type="number" step="0.01" min="0" class="form-control-dark" th:field="*{montantTtc}" required>
+                        <div style="font-size:11px;color:#6b7280;margin-bottom:10px">Si une ligne est renseignée ci-dessous, le total sera calculé automatiquement.</div>
+
+                        <label class="form-label-dark">Ligne article (optionnel)</label>
+                        <input type="text" class="form-control-dark" name="ligneDescription" placeholder="Description ligne">
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+                            <input type="number" min="1" class="form-control-dark" name="ligneQuantite" placeholder="Qté">
+                            <input type="number" step="0.01" min="0" class="form-control-dark" name="lignePrixUnitaire" placeholder="Prix u.">
+                            <input type="number" step="0.01" min="0" max="100" class="form-control-dark" name="ligneRemise" placeholder="Remise %">
+                        </div>
+
+                        <label class="form-label-dark">Date échéance</label>
+                        <input type="date" class="form-control-dark" th:field="*{dateEcheance}">
+
+                        <button class="btn-submit" type="submit">Créer</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header"><div class="card-title">Liste des documents</div></div>
+                <div class="card-body" th:if="${#lists.isEmpty(factures)}">
+                    <div class="empty-state">Aucune facture/devis/avoir pour le moment.</div>
+                </div>
+                <table th:if="${not #lists.isEmpty(factures)}">
+                    <thead>
+                    <tr>
+                        <th>Numéro</th>
+                        <th>Type</th>
+                        <th>Client</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="f : ${factures}">
+                        <td th:text="${f.numero}">FAC-2026-00001</td>
+                        <td th:text="${f.type}">FACTURE</td>
+                        <td th:text="${f.clientNom}">Client</td>
+                        <td th:text="${#numbers.formatDecimal(f.montantTtc,0,'COMMA',0,'POINT')} + ' F'">0 F</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${f.statut.name() == 'BROUILLON'} ? ' badge-brouillon' :
+                                                  (${f.statut.name() == 'ENVOYEE'} ? ' badge-envoyee' :
+                                                  (${f.statut.name() == 'PAYEE'} ? ' badge-payee' :
+                                                  (${f.statut.name() == 'IMPAYEE'} ? ' badge-impayee' : ' badge-annulee')))"
+                                  th:text="${f.statut}">BROUILLON</span>
+                        </td>
+                        <td th:text="${f.dateEmission != null ? #temporals.format(f.dateEmission,'dd/MM/yyyy') : '—'}">—</td>
+                        <td>
+                            <form th:action="@{/factures/{id}/statut(id=${f.id})}" method="post" style="display:flex;gap:8px;align-items:center">
+                                <select name="statut" class="form-control-dark" style="margin-bottom:0;padding:6px 8px;font-size:12px">
+                                    <option th:each="s : ${statuts}" th:value="${s}" th:text="${s}" th:selected="${s == f.statut}"></option>
+                                </select>
+                                <button type="submit" class="action-btn btn-edit">MAJ</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px"
+                     th:if="${facturesPage != null and facturesPage.totalPages > 1}">
+                    <small style="color:#6b7280"
+                           th:text="'Page ' + (${facturesPage.number}+1) + ' / ' + ${facturesPage.totalPages}"></small>
+                    <div style="display:flex;gap:8px">
+                        <a class="action-btn btn-edit"
+                           th:if="${facturesPage.hasPrevious()}"
+                           th:href="@{/factures(page=${facturesPage.number-1},size=${size},q=${q},statut=${statut},debut=${debut},fin=${fin})}">Précédent</a>
+                        <a class="action-btn btn-edit"
+                           th:if="${facturesPage.hasNext()}"
+                           th:href="@{/factures(page=${facturesPage.number+1},size=${size},q=${q},statut=${statut},debut=${debut},fin=${fin})}">Suivant</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>
