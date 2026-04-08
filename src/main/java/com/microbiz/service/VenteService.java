@@ -20,6 +20,13 @@ public class VenteService {
 
     public List<Vente> findAll()   { return venteRepository.findAllByOrderByDateVenteDesc(); }
     public long countAll()         { return venteRepository.count(); }
+
+    public long countAll(LocalDate debut, LocalDate fin) {
+        if (debut != null && fin != null) {
+            return venteRepository.countByDateVenteBetween(debut, fin);
+        }
+        return venteRepository.count();
+    }
     public Optional<Vente> findById(Long id) { return venteRepository.findById(id); }
 
     public List<Vente> getVentesRecentes() {
@@ -80,7 +87,16 @@ public class VenteService {
     }
 
     public List<Map<String, Object>> getTopProduits(int n) {
-        List<Object[]> rows = venteRepository.findTopProduits(PageRequest.of(0, n));
+        return getTopProduits(n, null, null);
+    }
+
+    public List<Map<String, Object>> getTopProduits(int n, LocalDate debut, LocalDate fin) {
+        List<Object[]> rows;
+        if (debut != null && fin != null) {
+            rows = venteRepository.findTopProduitsParPeriode(debut, fin, PageRequest.of(0, n));
+        } else {
+            rows = venteRepository.findTopProduits(PageRequest.of(0, n));
+        }
         List<Map<String, Object>> result = new ArrayList<>();
         for (Object[] row : rows) {
             Map<String, Object> item = new LinkedHashMap<>();

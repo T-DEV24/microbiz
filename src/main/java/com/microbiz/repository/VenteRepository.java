@@ -3,8 +3,10 @@ package com.microbiz.repository;
 import com.microbiz.model.Vente;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -54,6 +56,8 @@ public interface VenteRepository extends JpaRepository<Vente, Long> {
 
     long countByDateVente(LocalDate date);
 
+    long countByDateVenteBetween(LocalDate debut, LocalDate fin);
+
     // AMÉLIORATION 1 : evolution mensuelle
     @Query("SELECT MONTH(v.dateVente), YEAR(v.dateVente), SUM(v.quantite * v.prixUnitaire) " +
             "FROM Vente v GROUP BY YEAR(v.dateVente), MONTH(v.dateVente) " +
@@ -71,4 +75,11 @@ public interface VenteRepository extends JpaRepository<Vente, Long> {
     @Query("SELECT v.produit, SUM(v.quantite), SUM(v.quantite * v.prixUnitaire) " +
             "FROM Vente v GROUP BY v.produit ORDER BY SUM(v.quantite) DESC")
     List<Object[]> findTopProduits(Pageable pageable);
+
+    @Query("SELECT v.produit, SUM(v.quantite), SUM(v.quantite * v.prixUnitaire) " +
+            "FROM Vente v WHERE v.dateVente BETWEEN :debut AND :fin " +
+            "GROUP BY v.produit ORDER BY SUM(v.quantite) DESC")
+    List<Object[]> findTopProduitsParPeriode(@Param("debut") LocalDate debut,
+                                             @Param("fin") LocalDate fin,
+                                             Pageable pageable);
 }
