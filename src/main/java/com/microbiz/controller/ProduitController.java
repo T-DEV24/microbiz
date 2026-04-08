@@ -1,11 +1,13 @@
 package com.microbiz.controller;
 
 import com.microbiz.model.Produit;
+import com.microbiz.model.Depense;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.microbiz.service.AuditLogService;
+import com.microbiz.service.DepenseService;
 import com.microbiz.service.ProduitService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,7 @@ public class ProduitController {
 
     @Autowired private ProduitService produitService;
     @Autowired private AuditLogService auditLogService;
+    @Autowired private DepenseService depenseService;
 
     @GetMapping
     public String liste(@RequestParam(defaultValue = "0") int page,
@@ -86,11 +89,41 @@ public class ProduitController {
             return "produits";
         }
         boolean isNew = (produit.getId() == null);
+        int oldStock = 0;
+        if (!isNew) {
+            Produit existing = produitService.findById(produit.getId())
+                    .orElseThrow(() -> new RuntimeException("Produit introuvable"));
+            oldStock = existing.getStockActuel() != null ? existing.getStockActuel() : 0;
+        }
         Produit saved = produitService.save(produit);
         auditLogService.log(isNew ? "CREATE" : "UPDATE", "PRODUIT", saved.getId(), saved.getNom());
-        ra.addFlashAttribute("succes",
-                isNew ? "Produit « " + produit.getNom() + " » ajouté !"
-                        : "Produit « " + produit.getNom() + " » modifié !");
+
+        int newStock = saved.getStockActuel() != null ? saved.getStockActuel() : 0;
+        int stockAjoute = isNew ? Math.max(newStock, 0) : Math.max(newStock - oldStock, 0);
+        double coutRevient = saved.getCoutRevient() != null ? saved.getCoutRevient() : 0.0;
+        double montantAppro = stockAjoute * coutRevient;
+        boolean depenseAutoGeneree = false;
+        if (stockAjoute > 0 && montantAppro > 0) {
+            Depense depense = Depense.builder()
+                    .description("Approvisionnement produit : " + saved.getNom() + " (" + stockAjoute + " unité(s))")
+                    .categorie("Matieres premieres")
+                    .montant(montantAppro)
+                    .build();
+            depenseService.save(depense);
+            depenseAutoGeneree = true;
+            auditLogService.log("AUTO_DEPENSE", "PRODUIT", saved.getId(),
+                    "Dépense auto générée : " + Math.round(montantAppro) + " FCFA");
+        }
+
+        String messageSucces = isNew
+                ? "Produit « " + produit.getNom() + " » ajouté !"
+                : "Produit « " + produit.getNom() + " » modifié !";
+        if (depenseAutoGeneree) {
+            messageSucces += " Dépense d'approvisionnement enregistrée ("
+                    + String.format("%,.0f", montantAppro).replace(',', ' ')
+                    + " FCFA).";
+        }
+        ra.addFlashAttribute("succes", messageSucces);
         return "redirect:/produits";
     }
 
@@ -107,10 +140,25 @@ public class ProduitController {
                 .orElseThrow(() -> new RuntimeException("Produit introuvable"));
         p.setStockActuel(p.getStockActuel() + quantite);
         produitService.save(p);
+
+        double coutRevient = p.getCoutRevient() != null ? p.getCoutRevient() : 0.0;
+        double montantAppro = quantite * coutRevient;
+        if (montantAppro > 0) {
+            Depense depense = Depense.builder()
+                    .description("Réapprovisionnement : " + p.getNom() + " (+" + quantite + ")")
+                    .categorie("Matieres premieres")
+                    .montant(montantAppro)
+                    .build();
+            depenseService.save(depense);
+        }
+
         auditLogService.log("RESTOCK", "PRODUIT", p.getId(), "Quantité ajoutée: " + quantite);
         ra.addFlashAttribute("succes",
                 "Stock de « " + p.getNom() + " » mis à jour : +" + quantite
-                        + " unités (total : " + p.getStockActuel() + ").");
+                        + " unités (total : " + p.getStockActuel() + ")."
+                        + (montantAppro > 0
+                        ? " Dépense auto: " + String.format("%,.0f", montantAppro).replace(',', ' ') + " FCFA."
+                        : ""));
         return "redirect:/produits";
     }
 
