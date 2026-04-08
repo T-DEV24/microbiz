@@ -55,6 +55,7 @@
     <a href="/statistiques" class="nav-link"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
     <div class="nav-section" sec:authorize="hasRole('ADMIN')">Système</div>
     <a href="/utilisateurs" class="nav-link" sec:authorize="hasRole('ADMIN')"><i class="bi bi-shield-lock"></i> Utilisateurs</a>
+    <a href="/audit-logs" class="nav-link" sec:authorize="hasRole('ADMIN')"><i class="bi bi-journal-check"></i> Audit logs</a>
   </nav>
   <div class="p-3" style="border-top:1px solid rgba(255,255,255,.07)">
     <div class="d-flex align-items-center gap-2">
