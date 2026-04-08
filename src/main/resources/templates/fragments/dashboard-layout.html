@@ -50,6 +50,7 @@
     <a href="/clients"      class="nav-link" th:classappend="${active} == 'clients' ? ' active' : ''"><i class="bi bi-people"></i> Clients</a>
     <div class="nav-section">Finance</div>
     <a href="/depenses"     class="nav-link" th:classappend="${active} == 'depenses' ? ' active' : ''"><i class="bi bi-credit-card"></i> Dépenses</a>
+    <a href="/factures"     class="nav-link" th:classappend="${active} == 'factures' ? ' active' : ''"><i class="bi bi-receipt"></i> Factures</a>
     <a href="/statistiques" class="nav-link" th:classappend="${active} == 'statistiques' ? ' active' : ''"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
     <div class="nav-section" sec:authorize="hasRole('ADMIN')">Système</div>
     <a href="/utilisateurs" class="nav-link" th:classappend="${active} == 'utilisateurs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-shield-lock"></i> Utilisateurs</a>

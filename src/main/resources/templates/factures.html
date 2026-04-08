@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Factures', 'Facturation', 'factures')">
+<div th:fragment="content">
+    <div class="topbar">
+        <div>
+            <div class="page-title">Factures</div>
+            <div class="page-sub" th:text="${#lists.size(factures)} + ' document(s)'">0 document(s)</div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
+
+        <div class="grid-2">
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header"><div class="card-title">Nouveau document</div></div>
+                <div class="card-body">
+                    <form th:action="@{/factures}" method="post" th:object="${facture}">
+                        <label class="form-label-dark">Type</label>
+                        <select class="form-control-dark" th:field="*{type}">
+                            <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
+                        </select>
+
+                        <label class="form-label-dark">Nom client *</label>
+                        <input class="form-control-dark" th:field="*{clientNom}" placeholder="Ex : Marie Ngo" required>
+
+                        <label class="form-label-dark">Montant TTC *</label>
+                        <input type="number" step="0.01" min="0" class="form-control-dark" th:field="*{montantTtc}" required>
+
+                        <label class="form-label-dark">Date échéance</label>
+                        <input type="date" class="form-control-dark" th:field="*{dateEcheance}">
+
+                        <button class="btn-submit" type="submit">Créer</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header"><div class="card-title">Liste des documents</div></div>
+                <div class="card-body" th:if="${#lists.isEmpty(factures)}">
+                    <div class="empty-state">Aucune facture/devis/avoir pour le moment.</div>
+                </div>
+                <table th:if="${not #lists.isEmpty(factures)}">
+                    <thead>
+                    <tr>
+                        <th>Numéro</th>
+                        <th>Type</th>
+                        <th>Client</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="f : ${factures}">
+                        <td th:text="${f.numero}">FAC-2026-00001</td>
+                        <td th:text="${f.type}">FACTURE</td>
+                        <td th:text="${f.clientNom}">Client</td>
+                        <td th:text="${#numbers.formatDecimal(f.montantTtc,0,'COMMA',0,'POINT')} + ' F'">0 F</td>
+                        <td>
+                            <span class="badge" th:text="${f.statut}">BROUILLON</span>
+                        </td>
+                        <td th:text="${f.dateEmission != null ? #temporals.format(f.dateEmission,'dd/MM/yyyy') : '—'}">—</td>
+                        <td>
+                            <form th:action="@{/factures/{id}/statut(id=${f.id})}" method="post" style="display:flex;gap:8px;align-items:center">
+                                <select name="statut" class="form-control-dark" style="margin-bottom:0;padding:6px 8px;font-size:12px">
+                                    <option th:each="s : ${statuts}" th:value="${s}" th:text="${s}" th:selected="${s == f.statut}"></option>
+                                </select>
+                                <button type="submit" class="action-btn btn-edit">MAJ</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</html>
