@@ -38,4 +38,18 @@ public class AchatApiController {
         ));
         return achat;
     }
+
+    @PostMapping("/{id}/reception-partielle")
+    public AchatCommande receptionnerPartielle(@PathVariable Long id,
+                                               @RequestParam Integer quantite) {
+        AchatCommande achat = achatCommandeService.receptionnerPartielle(id, quantite);
+        webhookService.publish("achat.reception.partielle", Map.of(
+                "id", achat.getId(),
+                "produitId", achat.getProduit().getId(),
+                "quantiteRecue", quantite,
+                "quantiteTotaleRecue", achat.getQuantiteRecue(),
+                "statut", achat.getStatut().name()
+        ));
+        return achat;
+    }
 }

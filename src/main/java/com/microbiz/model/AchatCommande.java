@@ -18,6 +18,7 @@ public class AchatCommande {
     public enum StatutAchat {
         BROUILLON,
         COMMANDEE,
+        RECEPTION_PARTIELLE,
         RECEPTIONNEE,
         ANNULEE
     }
@@ -40,6 +41,10 @@ public class AchatCommande {
 
     @Column(nullable = false)
     private Double coutUnitaire;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer quantiteRecue = 0;
 
     private LocalDate dateCommande;
 

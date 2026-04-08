@@ -7,6 +7,8 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "facture")
@@ -53,6 +55,10 @@ public class Facture {
     @Column(nullable = false)
     private Double montantTtc;
 
+    @OneToMany(mappedBy = "facture", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<FactureLigne> lignes = new ArrayList<>();
+
     private LocalDate dateEmission;
 
     private LocalDate dateEcheance;
@@ -63,5 +69,11 @@ public class Facture {
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (dateEmission == null) dateEmission = LocalDate.now();
+    }
+
+    public void addLigne(FactureLigne ligne) {
+        if (ligne == null) return;
+        lignes.add(ligne);
+        ligne.setFacture(this);
     }
 }

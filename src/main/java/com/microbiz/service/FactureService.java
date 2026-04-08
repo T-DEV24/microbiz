@@ -1,8 +1,11 @@
 package com.microbiz.service;
 
 import com.microbiz.model.Facture;
+import com.microbiz.model.FactureLigne;
 import com.microbiz.repository.FactureRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,14 @@ public class FactureService {
         return factureRepository.findAll();
     }
 
+    public Page<Facture> search(String q,
+                                Facture.StatutFacture statut,
+                                LocalDate debut,
+                                LocalDate fin,
+                                Pageable pageable) {
+        return factureRepository.search(q, statut, debut, fin, pageable);
+    }
+
     public Facture create(Facture facture) {
         if (facture.getNumero() == null || facture.getNumero().isBlank()) {
             facture.setNumero(nextNumero(facture.getType() != null ? facture.getType() : Facture.TypeDocument.FACTURE));
@@ -45,6 +56,7 @@ public class FactureService {
         if (facture.getStatut() == null) {
             facture.setStatut(Facture.StatutFacture.BROUILLON);
         }
+        recalculerMontant(facture);
         return factureRepository.save(facture);
     }
 
@@ -68,6 +80,22 @@ public class FactureService {
         if (!transitions.contains(cible)) {
             throw new RuntimeException("Transition invalide : " + actuel + " -> " + cible + ".");
         }
+    }
+
+    private void recalculerMontant(Facture facture) {
+        if (facture.getLignes() == null || facture.getLignes().isEmpty()) {
+            if (facture.getMontantTtc() == null || facture.getMontantTtc() < 0) {
+                throw new RuntimeException("Le montant TTC doit être positif.");
+            }
+            return;
+        }
+        double total = 0.0;
+        for (FactureLigne ligne : facture.getLignes()) {
+            if (ligne == null) continue;
+            ligne.setFacture(facture);
+            total += ligne.getTotalLigne();
+        }
+        facture.setMontantTtc(Math.max(total, 0.0));
     }
 
     private String nextNumero(Facture.TypeDocument type) {
