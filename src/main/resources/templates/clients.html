@@ -6,10 +6,22 @@
             <div class="page-title">Clients</div>
             <div class="page-sub" th:text="${clientsPage != null ? clientsPage.totalElements : #lists.size(clients)} + ' clients enregistrés'">0 clients</div>
         </div>
-        <a href="/clients/nouveau" class="btn-primary-custom">+ Nouveau client</a>
+        <div style="display:flex;gap:8px;align-items:center">
+            <a href="/clients/nouveau" class="btn-primary-custom">+ Nouveau client</a>
+            <a th:href="@{/clients/export.csv(q=${q})}" class="action-btn btn-edit">CSV</a>
+            <a th:href="@{/clients/export.pdf(q=${q})}" class="action-btn btn-edit">PDF</a>
+        </div>
     </div>
     <div class="content">
         <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
+        <form th:action="@{/clients}" method="get" style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+            <input type="text" name="q" class="form-control-dark" placeholder="Rechercher un client..." th:value="${q}" style="max-width:260px">
+            <input type="hidden" name="sort" th:value="${sort}">
+            <input type="hidden" name="dir" th:value="${dir}">
+            <input type="hidden" name="size" th:value="${size}">
+            <button type="submit" class="action-btn btn-edit">Filtrer</button>
+            <a th:href="@{/clients(trash=${!trash})}" class="action-btn btn-delete" th:text="${trash ? 'Voir actifs' : 'Corbeille'}">Corbeille</a>
+        </form>
 
         <div class="metrics-row">
             <div class="metric-card">
@@ -54,7 +66,13 @@
                 </div>
                 <div th:if="${#lists.isEmpty(clients)}" class="empty-state">Aucun client enregistré.</div>
                 <table th:if="${not #lists.isEmpty(clients)}">
-                    <thead><tr><th>Client</th><th>Téléphone</th><th>Email</th><th>Inscription</th><th></th></tr></thead>
+                    <thead><tr>
+                        <th><a th:href="@{/clients(page=0,size=${size},sort='nom',dir=${sort=='nom' and dir=='asc' ? 'desc':'asc'},q=${q},trash=${trash})}">Client</a></th>
+                        <th><a th:href="@{/clients(page=0,size=${size},sort='telephone',dir=${sort=='telephone' and dir=='asc' ? 'desc':'asc'},q=${q},trash=${trash})}">Téléphone</a></th>
+                        <th><a th:href="@{/clients(page=0,size=${size},sort='email',dir=${sort=='email' and dir=='asc' ? 'desc':'asc'},q=${q},trash=${trash})}">Email</a></th>
+                        <th><a th:href="@{/clients(page=0,size=${size},sort='dateInscription',dir=${sort=='dateInscription' and dir=='asc' ? 'desc':'asc'},q=${q},trash=${trash})}">Inscription</a></th>
+                        <th></th>
+                    </tr></thead>
                     <tbody>
                     <tr th:each="c : ${clients}">
                         <td>
@@ -67,10 +85,13 @@
                         <td th:text="${c.email != null ? c.email : '—'}" style="color:var(--muted);font-size:12px">—</td>
                         <td th:text="${c.dateInscription != null ? #temporals.format(c.dateInscription,'dd/MM/yyyy') : '—'}" style="color:var(--muted);font-size:12px">—</td>
                         <td>
-                            <a th:href="@{/clients/modifier/{id}(id=${c.id})}" class="action-btn btn-edit">Modifier</a>
-                            <form th:action="@{/clients/supprimer/{id}(id=${c.id})}" method="post" style="display:inline">
+                            <a th:if="${!trash}" th:href="@{/clients/modifier/{id}(id=${c.id})}" class="action-btn btn-edit">Modifier</a>
+                            <form th:if="${!trash}" th:action="@{/clients/supprimer/{id}(id=${c.id})}" method="post" style="display:inline">
                                 <button type="submit" class="action-btn btn-delete"
                                         onclick="return confirm('Supprimer ce client ?')">Supprimer</button>
+                            </form>
+                            <form th:if="${trash}" th:action="@{/clients/restaurer/{id}(id=${c.id})}" method="post" style="display:inline">
+                                <button type="submit" class="action-btn btn-edit">Restaurer</button>
                             </form>
                         </td>
                     </tr>
@@ -82,10 +103,10 @@
                     <div style="display:flex;gap:8px">
                         <a class="action-btn btn-edit"
                            th:if="${clientsPage.hasPrevious()}"
-                           th:href="@{/clients(page=${clientsPage.number-1},size=${size},sort=${sort},dir=${dir})}">Précédent</a>
+                           th:href="@{/clients(page=${clientsPage.number-1},size=${size},sort=${sort},dir=${dir},q=${q},trash=${trash})}">Précédent</a>
                         <a class="action-btn btn-edit"
                            th:if="${clientsPage.hasNext()}"
-                           th:href="@{/clients(page=${clientsPage.number+1},size=${size},sort=${sort},dir=${dir})}">Suivant</a>
+                           th:href="@{/clients(page=${clientsPage.number+1},size=${size},sort=${sort},dir=${dir},q=${q},trash=${trash})}">Suivant</a>
                     </div>
                 </div>
             </div>
