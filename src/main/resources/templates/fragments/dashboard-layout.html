@@ -52,6 +52,7 @@
     <a href="/statistiques" class="nav-link" th:classappend="${active} == 'statistiques' ? ' active' : ''"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
     <div class="nav-section" sec:authorize="hasRole('ADMIN')">Système</div>
     <a href="/utilisateurs" class="nav-link" th:classappend="${active} == 'utilisateurs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-shield-lock"></i> Utilisateurs</a>
+    <a href="/audit-logs" class="nav-link" th:classappend="${active} == 'audit-logs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-journal-check"></i> Audit logs</a>
   </nav>
   <div class="sidebar-footer">
     <div class="d-flex align-items-center gap-2">

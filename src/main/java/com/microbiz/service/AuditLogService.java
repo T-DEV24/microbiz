@@ -3,6 +3,8 @@ package com.microbiz.service;
 import com.microbiz.model.AuditLog;
 import com.microbiz.repository.AuditLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,5 +28,9 @@ public class AuditLogService {
                 .username(username)
                 .details(details)
                 .build());
+    }
+
+    public Page<AuditLog> findAll(Pageable pageable) {
+        return auditLogRepository.findAll(pageable);
     }
 }

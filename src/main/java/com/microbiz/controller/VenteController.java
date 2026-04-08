@@ -124,8 +124,8 @@ public class VenteController {
             if (clientId != null)
                 vente.setClient(clientService.findById(clientId).orElse(null));
 
-            venteService.enregistrerVente(vente);
-            auditLogService.log("CREATE", "VENTE", vente.getId(), "Enregistrement vente");
+            Vente saved = venteService.enregistrerVente(vente);
+            auditLogService.log("CREATE", "VENTE", saved.getId(), "Enregistrement vente");
 
             int stockRestant = stockActuel - quantite;
             long total = (long)(quantite * prixUnitaire);
@@ -161,7 +161,8 @@ public class VenteController {
                                             @RequestParam(defaultValue = "dateVente") String sort,
                                             @RequestParam(defaultValue = "desc") String dir) {
         Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 1000, Sort.by(direction, sort)));
+        String sortField = resolveSortField(sort);
+        Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 1000, Sort.by(direction, sortField)));
 
         StringBuilder csv = new StringBuilder("id,date,produit,client,quantite,prix_unitaire,montant\n");
         for (Vente v : ventes.getContent()) {
@@ -189,7 +190,8 @@ public class VenteController {
                                             @RequestParam(defaultValue = "desc") String dir) {
         try {
             Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
-            Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 500, Sort.by(direction, sort)));
+            String sortField = resolveSortField(sort);
+            Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 500, Sort.by(direction, sortField)));
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Document doc = new Document();
@@ -226,5 +228,10 @@ public class VenteController {
         if (value == null) return "";
         String escaped = value.replace("\"", "\"\"");
         return "\"" + escaped + "\"";
+    }
+
+    private String resolveSortField(String sort) {
+        List<String> allowedSorts = List.of("dateVente", "prixUnitaire", "quantite", "id");
+        return allowedSorts.contains(sort) ? sort : "dateVente";
     }
 }

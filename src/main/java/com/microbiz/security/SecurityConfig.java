@@ -54,7 +54,7 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
                         // Routes ADMIN uniquement
-                        .requestMatchers("/utilisateurs/**").hasRole("ADMIN")
+                        .requestMatchers("/utilisateurs/**", "/audit-logs/**").hasRole("ADMIN")
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )

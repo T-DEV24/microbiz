@@ -82,8 +82,9 @@ public class ClientController {
                               BindingResult result,
                               RedirectAttributes redirectAttrs) {
         if (result.hasErrors()) return "client-form";
+        boolean isNew = client.getId() == null;
         Client saved = clientService.save(client);
-        auditLogService.log(client.getId() == null ? "CREATE" : "UPDATE", "CLIENT", saved.getId(), saved.getNom());
+        auditLogService.log(isNew ? "CREATE" : "UPDATE", "CLIENT", saved.getId(), saved.getNom());
         redirectAttrs.addFlashAttribute("succes", "Client sauvegarde !");
         return "redirect:/clients";
     }
