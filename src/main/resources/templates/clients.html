@@ -4,7 +4,7 @@
     <div class="topbar">
         <div>
             <div class="page-title">Clients</div>
-            <div class="page-sub" th:text="${#lists.size(clients)} + ' clients enregistrés'">0 clients</div>
+            <div class="page-sub" th:text="${clientsPage != null ? clientsPage.totalElements : #lists.size(clients)} + ' clients enregistrés'">0 clients</div>
         </div>
         <a href="/clients/nouveau" class="btn-primary-custom">+ Nouveau client</a>
     </div>
@@ -14,7 +14,7 @@
         <div class="metrics-row">
             <div class="metric-card">
                 <div class="metric-label">Total clients</div>
-                <div class="metric-value" th:text="${#lists.size(clients)}">0</div>
+                <div class="metric-value" th:text="${clientsPage != null ? clientsPage.totalElements : #lists.size(clients)}">0</div>
                 <div class="metric-sub">Base clients</div>
             </div>
             <div class="metric-card">
@@ -50,7 +50,7 @@
             <div class="card" style="margin-bottom:0">
                 <div class="card-header">
                     <div class="card-title">Base clients</div>
-                    <span style="font-size:12px;color:var(--muted)" th:text="${#lists.size(clients)} + ' clients'"></span>
+                    <span style="font-size:12px;color:var(--muted)" th:text="${clientsPage != null ? clientsPage.totalElements : #lists.size(clients)} + ' clients'"></span>
                 </div>
                 <div th:if="${#lists.isEmpty(clients)}" class="empty-state">Aucun client enregistré.</div>
                 <table th:if="${not #lists.isEmpty(clients)}">
@@ -68,12 +68,26 @@
                         <td th:text="${c.dateInscription != null ? #temporals.format(c.dateInscription,'dd/MM/yyyy') : '—'}" style="color:var(--muted);font-size:12px">—</td>
                         <td>
                             <a th:href="@{/clients/modifier/{id}(id=${c.id})}" class="action-btn btn-edit">Modifier</a>
-                            <a th:href="@{/clients/supprimer/{id}(id=${c.id})}" class="action-btn btn-delete"
-                               onclick="return confirm('Supprimer ce client ?')">Supprimer</a>
+                            <form th:action="@{/clients/supprimer/{id}(id=${c.id})}" method="post" style="display:inline">
+                                <button type="submit" class="action-btn btn-delete"
+                                        onclick="return confirm('Supprimer ce client ?')">Supprimer</button>
+                            </form>
                         </td>
                     </tr>
                     </tbody>
                 </table>
+                <div class="pagination-row" th:if="${clientsPage != null and clientsPage.totalPages > 1}" style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+                    <small style="color:var(--muted)"
+                           th:text="'Page ' + (${clientsPage.number}+1) + ' / ' + ${clientsPage.totalPages}"></small>
+                    <div style="display:flex;gap:8px">
+                        <a class="action-btn btn-edit"
+                           th:if="${clientsPage.hasPrevious()}"
+                           th:href="@{/clients(page=${clientsPage.number-1},size=${size},sort=${sort},dir=${dir})}">Précédent</a>
+                        <a class="action-btn btn-edit"
+                           th:if="${clientsPage.hasNext()}"
+                           th:href="@{/clients(page=${clientsPage.number+1},size=${size},sort=${sort},dir=${dir})}">Suivant</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

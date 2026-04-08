@@ -1,6 +1,8 @@
 package com.microbiz.service;
 import com.microbiz.model.Produit;
 import com.microbiz.repository.ProduitRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,7 @@ public class ProduitService {
     @Autowired
     private ProduitRepository produitRepository;
     public List<Produit> findAll()    { return produitRepository.findAll(); }
+    public Page<Produit> findAll(Pageable pageable) { return produitRepository.findAll(pageable); }
     public Optional<Produit> findById(Long id) { return produitRepository.findById(id); }
     public Produit save(Produit p)   { return produitRepository.save(p); }
     public void deleteById(Long id)   { produitRepository.deleteById(id); }
