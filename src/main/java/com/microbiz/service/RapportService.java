@@ -115,12 +115,6 @@ public class RapportService {
 
             doc.add(tableTop);
 
-            // Formules
-            doc.add(new Paragraph("\nFormules appliquées :\n", fSousTi));
-            doc.add(new Paragraph("CA = SUM(quantite × prix_unitaire)", fMuted));
-            doc.add(new Paragraph("Bénéfice = CA − Dépenses", fMuted));
-            doc.add(new Paragraph("Marge = (Bénéfice / CA) × 100", fMuted));
-
             doc.close();
 
             return baos.toByteArray();
