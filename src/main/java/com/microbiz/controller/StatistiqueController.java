@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDate;
 
 @Controller
@@ -21,18 +22,29 @@ public class StatistiqueController {
     @Autowired private RapportService     rapportService;
 
     @GetMapping
-    public String statistiques(Model model) {
+    public String statistiques(@RequestParam(defaultValue = "mois") String periode,
+                               @RequestParam(defaultValue = "5") int top,
+                               Model model) {
+        int topN = Math.min(Math.max(top, 3), 10);
         model.addAttribute("caTotal",          statistiqueService.getChiffreAffairesTotal());
         model.addAttribute("caMois",           statistiqueService.getChiffreAffairesDuMois());
         model.addAttribute("benefice",         statistiqueService.getBeneficeNet());
         model.addAttribute("marge",            statistiqueService.getMargeBeneficiaire());
         model.addAttribute("depenses",         depenseService.getTotalDepenses());
-        model.addAttribute("evolutionCA",      statistiqueService.getEvolutionMensuelle());
+        if ("semaine".equals(periode)) {
+            model.addAttribute("evolutionCA", statistiqueService.getEvolutionHebdomadaire(8));
+        } else if ("semestre".equals(periode)) {
+            model.addAttribute("evolutionCA", statistiqueService.getEvolutionSemestrielle());
+        } else {
+            model.addAttribute("evolutionCA", statistiqueService.getEvolutionMensuelle());
+        }
         model.addAttribute("depensesCategories", depenseService.getDepensesParCategorie());
-        model.addAttribute("topProduits",      venteService.getTopProduits(5));
+        model.addAttribute("topProduits",      venteService.getTopProduits(topN));
         model.addAttribute("nbVentes",         venteService.countAll());
         model.addAttribute("nbProduits",       produitService.countAll());
         model.addAttribute("nbClients",        clientService.countAll());
+        model.addAttribute("periode",          periode);
+        model.addAttribute("top",              topN);
         return "statistiques";
     }
 
@@ -47,4 +59,3 @@ public class StatistiqueController {
         response.getOutputStream().flush();
     }
 }
- 

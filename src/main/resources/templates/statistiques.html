@@ -77,10 +77,24 @@
             <h1 class="h5 mb-0 fw-semibold">Statistiques</h1>
             <div class="text-muted" style="font-size:12px">Analyse financière complète de votre activité</div>
         </div>
-        <!-- NOUVELLE FONCTIONNALITÉ 3 : bouton export PDF -->
-        <a href="/statistiques/export-pdf" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
-            <i class="bi bi-file-earmark-pdf"></i> Exporter PDF
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <form th:action="@{/statistiques}" method="get" class="d-flex gap-1">
+                <button type="submit" name="periode" value="mois"
+                        th:class="'btn btn-sm ' + (${periode == 'mois'} ? 'btn-primary' : 'btn-outline-secondary')">Mensuel</button>
+                <button type="submit" name="periode" value="semaine"
+                        th:class="'btn btn-sm ' + (${periode == 'semaine'} ? 'btn-primary' : 'btn-outline-secondary')">Hebdo</button>
+                <button type="submit" name="periode" value="semestre"
+                        th:class="'btn btn-sm ' + (${periode == 'semestre'} ? 'btn-primary' : 'btn-outline-secondary')">Semestriel</button>
+                <select name="top" class="form-select form-select-sm" style="width:auto">
+                    <option value="5" th:selected="${top == 5}">Top 5</option>
+                    <option value="8" th:selected="${top == 8}">Top 8</option>
+                    <option value="10" th:selected="${top == 10}">Top 10</option>
+                </select>
+            </form>
+            <a href="/statistiques/export-pdf" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
+                <i class="bi bi-file-earmark-pdf"></i> Exporter PDF
+            </a>
+        </div>
     </div>
 
     <div class="p-4">
@@ -149,7 +163,11 @@
         <div class="row g-3 mb-4">
             <div class="col-lg-7">
                 <div class="chart-card">
-                    <div class="card-header"><i class="bi bi-bar-chart me-2 text-primary"></i>Évolution CA mensuel</div>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-bar-chart me-2 text-primary"></i>Évolution du CA</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary"
+                              th:text="${periode == 'semaine' ? '8 dernières semaines' : (periode == 'semestre' ? 'Par semestre' : 'Par mois')}">Par mois</span>
+                    </div>
                     <div class="p-3"><div style="position:relative;height:240px"><canvas id="chartCA"></canvas></div></div>
                 </div>
             </div>
@@ -171,7 +189,7 @@
             </div>
             <div class="col-lg-6">
                 <div class="chart-card">
-                    <div class="card-header"><i class="bi bi-trophy me-2 text-warning"></i>Top 5 produits</div>
+                    <div class="card-header"><i class="bi bi-trophy me-2 text-warning"></i>Top produits (Top <span th:text="${top}">5</span>)</div>
                     <div th:each="item, stat : ${topProduits}" class="top-item">
                         <div class="top-rank"
                              th:classappend="${stat.index==0}?' gold':(${stat.index==1}?' silver':(${stat.index==2}?' bronze':''))"
