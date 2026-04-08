@@ -144,6 +144,9 @@
     <a href="/utilisateurs" class="nav-link" sec:authorize="hasRole('ADMIN')">
       <i class="bi bi-shield-lock"></i> Utilisateurs
     </a>
+    <a href="/audit-logs" class="nav-link" sec:authorize="hasRole('ADMIN')">
+      <i class="bi bi-journal-check"></i> Audit logs
+    </a>
   </nav>
 
   <div class="p-3" style="border-top:1px solid rgba(255,255,255,.07)">
@@ -189,6 +192,10 @@
         <button type="submit" name="periode" value="semaine"
                 th:class="'btn btn-sm periode-btn ' + (${periode == 'semaine'} ? 'btn-primary' : 'btn-outline-secondary')">
           <i class="bi bi-calendar-week me-1"></i>Hebdo
+        </button>
+        <button type="submit" name="periode" value="semestre"
+                th:class="'btn btn-sm periode-btn ' + (${periode == 'semestre'} ? 'btn-primary' : 'btn-outline-secondary')">
+          <i class="bi bi-calendar3 me-1"></i>Semestriel
         </button>
       </form>
       <a href="/ventes" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
@@ -313,7 +320,7 @@
               Évolution du chiffre d'affaires
             </span>
             <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:11px"
-                  th:text="${periode == 'semaine' ? '8 dernières semaines' : 'Par mois'}">Par mois</span>
+                  th:text="${periode == 'semaine' ? '8 dernières semaines' : (periode == 'semestre' ? 'Par semestre' : 'Par mois')}">Par mois</span>
           </div>
           <div class="p-3">
             <div style="position:relative;height:220px"><canvas id="chartCA"></canvas></div>

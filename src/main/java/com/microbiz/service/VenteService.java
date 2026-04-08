@@ -2,8 +2,10 @@ package com.microbiz.service;
 
 import com.microbiz.model.*;
 import com.microbiz.repository.*;
+import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -22,6 +24,10 @@ public class VenteService {
 
     public List<Vente> getVentesRecentes() {
         return venteRepository.findTop20ByOrderByDateVenteDesc();
+    }
+
+    public Page<Vente> getVentesFiltrees(LocalDate debut, LocalDate fin, String q, Pageable pageable) {
+        return venteRepository.findByFiltres(debut, fin, q, pageable);
     }
 
     public List<Vente> getVentesParPeriode(LocalDate debut, LocalDate fin) {
@@ -45,7 +51,17 @@ public class VenteService {
     /** Enregistrer une vente ET décrémenter le stock */
     public Vente enregistrerVente(Vente vente) {
         Produit p = vente.getProduit();
-        p.setStockActuel(p.getStockActuel() - vente.getQuantite());
+        int stockActuel = p.getStockActuel() == null ? 0 : p.getStockActuel();
+        int quantite = vente.getQuantite() == null ? 0 : vente.getQuantite();
+
+        if (quantite <= 0) {
+            throw new RuntimeException("La quantité doit être positive.");
+        }
+        if (stockActuel < quantite) {
+            throw new RuntimeException("Stock insuffisant — " + stockActuel + " unité(s) disponible(s).");
+        }
+
+        p.setStockActuel(stockActuel - quantite);
         produitRepository.save(p);
         return venteRepository.save(vente);
     }
@@ -56,7 +72,9 @@ public class VenteService {
                 .orElseThrow(() -> new RuntimeException("Vente introuvable."));
         // Restaurer le stock avant suppression
         Produit p = vente.getProduit();
-        p.setStockActuel(p.getStockActuel() + vente.getQuantite());
+        int stockActuel = p.getStockActuel() == null ? 0 : p.getStockActuel();
+        int quantite = vente.getQuantite() == null ? 0 : vente.getQuantite();
+        p.setStockActuel(stockActuel + quantite);
         produitRepository.save(p);
         venteRepository.deleteById(id);
     }

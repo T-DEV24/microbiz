@@ -31,6 +31,8 @@ public class DashboardController {
         // AMÉLIORATION 1 : évolution selon la période choisie
         if ("semaine".equals(periode)) {
             model.addAttribute("evolutionCA", statistiqueService.getEvolutionHebdomadaire(8));
+        } else if ("semestre".equals(periode)) {
+            model.addAttribute("evolutionCA", statistiqueService.getEvolutionSemestrielle());
         } else {
             model.addAttribute("evolutionCA", statistiqueService.getEvolutionMensuelle());
         }
