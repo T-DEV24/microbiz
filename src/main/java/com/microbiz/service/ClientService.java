@@ -39,6 +39,10 @@ public class ClientService {
         return clientRepository.findByDeletedAtIsNullAndNomContainingIgnoreCase(q.trim(), pageable);
     }
 
+    public Page<Client> findAll(Pageable pageable) {
+        return clientRepository.findAll(pageable);
+    }
+
     public Optional<Client> findById(Long id) {
         return clientRepository.findById(id);
     }
