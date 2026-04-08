@@ -2,6 +2,21 @@
 <html lang="fr" xmlns:th="http://www.thymeleaf.org"
       th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Audit logs', 'Traçabilité des actions', 'audit-logs')">
 <div th:fragment="content">
+    <style>
+        .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+        .page-title { font-size:28px; font-weight:700; color:#111827; line-height:1.2; }
+        .page-sub { color:#6b7280; font-size:13px; margin-top:4px; }
+        .content { padding:24px; }
+        .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:16px; }
+        .card-header { padding:14px 16px; border-bottom:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center; }
+        .card-title { font-size:14px; font-weight:700; color:#1f2937; }
+        .card-body { padding:16px; }
+        .action-btn { border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:8px; padding:6px 10px; font-size:12px; text-decoration:none; }
+        .btn-edit { border-color:#c7d2fe; color:#4338ca; background:#eef2ff; }
+        table { width:100%; border-collapse:collapse; }
+        th, td { padding:10px 12px; border-bottom:1px solid #f1f5f9; font-size:14px; }
+        th { color:#6b7280; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+    </style>
     <div class="topbar">
         <div>
             <div class="page-title">Journal d’audit</div>
