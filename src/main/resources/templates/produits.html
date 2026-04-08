@@ -70,11 +70,16 @@
     <div>
       <h1 class="h5 mb-0 fw-semibold">Produits</h1>
       <div class="text-muted" style="font-size:12px"
-           th:text="${#lists.size(produits)} + ' produits enregistrés'">0 produits</div>
+           th:text="${produitsPage != null ? produitsPage.totalElements : #lists.size(produits)} + ' produits enregistrés'">0 produits</div>
     </div>
-    <a href="/produits/nouveau" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
-      <i class="bi bi-plus-lg"></i> Nouveau produit
-    </a>
+    <div class="d-flex align-items-center gap-2">
+      <a href="/produits/nouveau" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
+        <i class="bi bi-plus-lg"></i> Nouveau produit
+      </a>
+      <a th:href="@{/produits/export.csv(q=${q})}" class="btn btn-outline-secondary btn-sm">CSV</a>
+      <a th:href="@{/produits/export.pdf(q=${q})}" class="btn btn-outline-secondary btn-sm">PDF</a>
+      <a th:href="@{/produits(trash=${!trash})}" class="btn btn-outline-danger btn-sm" th:text="${trash ? 'Voir actifs' : 'Corbeille'}">Corbeille</a>
+    </div>
   </div>
 
   <div class="p-4">
@@ -149,21 +154,25 @@
       </div>
     </div>
 
-    <!-- Catalogue avec AMÉLIORATION 3 : recherche temps réel -->
+    <!-- Catalogue -->
     <div class="card-section">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-grid me-2"></i>Catalogue produits</span>
-        <div class="d-flex align-items-center gap-2">
+        <form th:action="@{/produits}" method="get" class="d-flex align-items-center gap-2">
           <span id="searchCounter" style="font-size:11px;color:#9ca3af"></span>
           <div class="input-group input-group-sm" style="width:230px">
             <span class="input-group-text bg-white border-end-0">
               <i class="bi bi-search text-muted" style="font-size:12px"></i>
             </span>
             <input type="text" class="form-control border-start-0 ps-0"
-                   id="searchInput" placeholder="Nom ou catégorie..."
-                   oninput="filterProduits(this.value)">
+                   id="searchInput" name="q" placeholder="Nom ou catégorie..."
+                   th:value="${q}">
           </div>
-        </div>
+          <input type="hidden" name="sort" th:value="${sort}">
+          <input type="hidden" name="dir" th:value="${dir}">
+          <input type="hidden" name="size" th:value="${size}">
+          <button type="submit" class="btn btn-sm btn-outline-primary">Filtrer</button>
+        </form>
       </div>
 
       <div th:if="${#lists.isEmpty(produits)}"
@@ -176,8 +185,12 @@
       <table class="table mb-0 prod-table" id="produitsTable" th:if="${not #lists.isEmpty(produits)}">
         <thead>
         <tr>
-          <th>Produit</th><th>Catégorie</th><th>Prix vente</th>
-          <th>Coût</th><th>Marge</th><th>Stock</th><th>Statut</th><th>Actions</th>
+          <th><a th:href="@{/produits(page=0,size=${size},sort='nom',dir=${sort=='nom' and dir=='asc' ? 'desc':'asc'},q=${q},trash=${trash})}">Produit</a></th>
+          <th><a th:href="@{/produits(page=0,size=${size},sort='categorie',dir=${sort=='categorie' and dir=='asc' ? 'desc':'asc'},q=${q},trash=${trash})}">Catégorie</a></th>
+          <th><a th:href="@{/produits(page=0,size=${size},sort='prixVente',dir=${sort=='prixVente' and dir=='asc' ? 'desc':'asc'},q=${q},trash=${trash})}">Prix vente</a></th>
+          <th>Coût</th><th>Marge</th>
+          <th><a th:href="@{/produits(page=0,size=${size},sort='stockActuel',dir=${sort=='stockActuel' and dir=='asc' ? 'desc':'asc'},q=${q},trash=${trash})}">Stock</a></th>
+          <th>Statut</th><th>Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -216,12 +229,12 @@
           </td>
           <td>
             <div class="d-flex gap-1 align-items-center flex-wrap">
-              <a th:href="@{/produits/modifier/{id}(id=${p.id})}"
+              <a th:if="${!trash}" th:href="@{/produits/modifier/{id}(id=${p.id})}"
                  class="btn btn-sm btn-outline-primary py-0 px-2" title="Modifier">
                 <i class="bi bi-pencil" style="font-size:11px"></i>
               </a>
               <!-- AMÉLIORATION 3 : réapprovisionnement inline -->
-              <form th:action="@{/produits/reapprovisionner/{id}(id=${p.id})}"
+              <form th:if="${!trash}" th:action="@{/produits/reapprovisionner/{id}(id=${p.id})}"
                     method="post" class="d-flex gap-1 align-items-center">
                 <input type="number" name="quantite" value="10" min="1"
                        class="reappro-input" title="Qté à ajouter">
@@ -230,16 +243,38 @@
                   <i class="bi bi-plus-circle" style="font-size:11px"></i>
                 </button>
               </form>
-              <a th:href="@{/produits/supprimer/{id}(id=${p.id})}"
-                 class="btn btn-sm btn-outline-danger py-0 px-2"
-                 onclick="return confirm('Supprimer ce produit ?')" title="Supprimer">
-                <i class="bi bi-trash" style="font-size:11px"></i>
-              </a>
+              <form th:if="${!trash}" th:action="@{/produits/supprimer/{id}(id=${p.id})}" method="post" style="display:inline">
+                <button type="submit"
+                        class="btn btn-sm btn-outline-danger py-0 px-2"
+                        onclick="return confirm('Supprimer ce produit ?')" title="Supprimer">
+                  <i class="bi bi-trash" style="font-size:11px"></i>
+                </button>
+              </form>
+              <form th:if="${trash}" th:action="@{/produits/restaurer/{id}(id=${p.id})}" method="post" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2">Restaurer</button>
+              </form>
             </div>
           </td>
         </tr>
         </tbody>
       </table>
+      <div class="p-3 border-top d-flex justify-content-between align-items-center"
+           th:if="${produitsPage != null and produitsPage.totalPages > 1}">
+        <small class="text-muted"
+               th:text="'Page ' + (${produitsPage.number}+1) + ' / ' + ${produitsPage.totalPages}"></small>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary"
+             th:if="${produitsPage.hasPrevious()}"
+             th:href="@{/produits(page=${produitsPage.number-1},size=${size},sort=${sort},dir=${dir},q=${q},trash=${trash})}">
+            Précédent
+          </a>
+          <a class="btn btn-sm btn-outline-secondary"
+             th:if="${produitsPage.hasNext()}"
+             th:href="@{/produits(page=${produitsPage.number+1},size=${size},sort=${sort},dir=${dir},q=${q},trash=${trash})}">
+            Suivant
+          </a>
+        </div>
+      </div>
     </div>
 
   </div>

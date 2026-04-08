@@ -72,10 +72,7 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .permitAll()
-                )
-                // CSRF désactivé temporairement pour simplifier le dev
-                // À réactiver en production avec les tokens dans les forms
-                .csrf(csrf -> csrf.disable());
+                );
 
         return http.build();
     }

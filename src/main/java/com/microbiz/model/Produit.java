@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "produit")
@@ -32,6 +33,8 @@ public class Produit {
     @Min(0)
     @Column(name = "stock_actuel")
     private Integer stockActuel;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
     // Methode metier : calcul de la marge en %
     public Double getMarge() {
         if (prixVente == null || coutRevient == null || prixVente == 0) return 0.0;
@@ -40,5 +43,9 @@ public class Produit {
     // Methode metier : stock bas si <= 10 unites
     public boolean isStockBas() {
         return stockActuel != null && stockActuel <= 10;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 }
