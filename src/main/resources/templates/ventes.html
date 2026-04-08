@@ -71,6 +71,10 @@
       <h1 class="h5 mb-0 fw-semibold">Ventes</h1>
       <div class="text-muted" style="font-size:12px">Enregistrement et historique</div>
     </div>
+    <div class="d-flex gap-2">
+      <a th:href="@{/ventes/export.csv(debut=${debut},fin=${fin},q=${q},sort=${sort},dir=${dir})}" class="btn btn-outline-secondary btn-sm">CSV</a>
+      <a th:href="@{/ventes/export.pdf(debut=${debut},fin=${fin},q=${q},sort=${sort},dir=${dir})}" class="btn btn-outline-secondary btn-sm">PDF</a>
+    </div>
   </div>
 
   <div class="p-4">
@@ -195,20 +199,25 @@
                   th:text="${#lists.size(ventes)} + ' entrées'"></span>
           </div>
 
-          <!-- Filtre de date -->
+          <!-- Filtre de date + recherche -->
           <div class="p-3 pb-0">
             <form th:action="@{/ventes}" method="get" class="row g-2 mb-3 align-items-end">
-              <div class="col-5">
+              <div class="col-md-3">
                 <label class="form-label form-label-sm mb-1">Du</label>
                 <input type="date" class="form-control form-control-sm" name="debut"
                        th:value="${debut != null ? #temporals.format(debut,'yyyy-MM-dd') : ''}">
               </div>
-              <div class="col-5">
+              <div class="col-md-3">
                 <label class="form-label form-label-sm mb-1">Au</label>
                 <input type="date" class="form-control form-control-sm" name="fin"
                        th:value="${fin != null ? #temporals.format(fin,'yyyy-MM-dd') : ''}">
               </div>
-              <div class="col-2 d-flex gap-1">
+              <div class="col-md-4">
+                <label class="form-label form-label-sm mb-1">Recherche</label>
+                <input type="text" class="form-control form-control-sm" name="q"
+                       th:value="${q}" placeholder="Produit ou client">
+              </div>
+              <div class="col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-sm btn-primary flex-grow-1" title="Filtrer">
                   <i class="bi bi-funnel"></i>
                 </button>
@@ -216,13 +225,16 @@
                   <i class="bi bi-x"></i>
                 </a>
               </div>
+              <input type="hidden" name="sort" th:value="${sort}">
+              <input type="hidden" name="dir" th:value="${dir}">
+              <input type="hidden" name="size" th:value="${size}">
             </form>
 
             <!-- Total filtré -->
             <div th:if="${filtreActif and caFiltre != null}"
                  class="alert alert-info d-flex align-items-center gap-2 py-2 mb-2" style="font-size:12px">
               <i class="bi bi-funnel-fill flex-shrink-0"></i>
-              Période filtrée —
+              Résultats filtrés —
               <strong th:text="${#lists.size(ventes)} + ' ventes'"></strong> —
               Total : <strong th:text="${#numbers.formatDecimal(caFiltre,0,'COMMA',0,'POINT')} + ' FCFA'"></strong>
             </div>
@@ -235,7 +247,14 @@
           </div>
           <table class="table mb-0 vente-table" th:if="${not #lists.isEmpty(ventes)}">
             <thead>
-            <tr><th>Date</th><th>Produit</th><th>Client</th><th>Qté</th><th>Montant</th><th></th></tr>
+            <tr>
+              <th><a th:href="@{/ventes(page=0,size=${size},sort='dateVente',dir=${sort=='dateVente' and dir=='asc' ? 'desc':'asc'},debut=${debut},fin=${fin},q=${q})}">Date</a></th>
+              <th>Produit</th>
+              <th>Client</th>
+              <th><a th:href="@{/ventes(page=0,size=${size},sort='quantite',dir=${sort=='quantite' and dir=='asc' ? 'desc':'asc'},debut=${debut},fin=${fin},q=${q})}">Qté</a></th>
+              <th><a th:href="@{/ventes(page=0,size=${size},sort='prixUnitaire',dir=${sort=='prixUnitaire' and dir=='asc' ? 'desc':'asc'},debut=${debut},fin=${fin},q=${q})}">Montant</a></th>
+              <th></th>
+            </tr>
             </thead>
             <tbody>
             <tr th:each="v : ${ventes}">
@@ -252,15 +271,34 @@
                   th:text="${#numbers.formatDecimal(v.getMontantTotal(),0,'COMMA',0,'POINT')} + ' F'">0 F</td>
               <td>
                 <!-- AMÉLIORATION 2 : message indique que le stock est restauré -->
-                <a th:href="@{/ventes/supprimer/{id}(id=${v.id})}"
-                   class="btn btn-sm btn-outline-danger py-0 px-2"
-                   onclick="return confirm('Annuler cette vente ?\nLe stock du produit sera automatiquement restauré.')">
-                  <i class="bi bi-trash" style="font-size:11px"></i>
-                </a>
+                <form th:action="@{/ventes/supprimer/{id}(id=${v.id})}" method="post" style="display:inline">
+                  <button type="submit"
+                          class="btn btn-sm btn-outline-danger py-0 px-2"
+                          onclick="return confirm('Annuler cette vente ?\nLe stock du produit sera automatiquement restauré.')">
+                    <i class="bi bi-trash" style="font-size:11px"></i>
+                  </button>
+                </form>
               </td>
             </tr>
             </tbody>
           </table>
+          <div class="p-3 border-top d-flex justify-content-between align-items-center"
+               th:if="${ventesPage != null and ventesPage.totalPages > 1}">
+            <small class="text-muted"
+                   th:text="'Page ' + (${ventesPage.number}+1) + ' / ' + ${ventesPage.totalPages}"></small>
+            <div class="d-flex gap-2">
+              <a class="btn btn-sm btn-outline-secondary"
+                 th:if="${ventesPage.hasPrevious()}"
+                 th:href="@{/ventes(page=${ventesPage.number-1},size=${size},sort=${sort},dir=${dir},debut=${debut},fin=${fin},q=${q})}">
+                Précédent
+              </a>
+              <a class="btn btn-sm btn-outline-secondary"
+                 th:if="${ventesPage.hasNext()}"
+                 th:href="@{/ventes(page=${ventesPage.number+1},size=${size},sort=${sort},dir=${dir},debut=${debut},fin=${fin},q=${q})}">
+                Suivant
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

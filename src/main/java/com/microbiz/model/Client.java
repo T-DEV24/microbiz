@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 @Entity
 @Table(name = "client")
 @Data
@@ -21,10 +22,16 @@ public class Client {
     private String email;
     @Column(name = "date_inscription")
     private LocalDate dateInscription;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
     // Remplit automatiquement la date a la creation
     @PrePersist
     public void prePersist() {
         if (dateInscription == null)
             dateInscription = LocalDate.now();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 }

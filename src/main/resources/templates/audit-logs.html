@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Audit logs', 'Traçabilité des actions', 'audit-logs')">
+<div th:fragment="content">
+    <div class="topbar">
+        <div>
+            <div class="page-title">Journal d’audit</div>
+            <div class="page-sub">Historique des actions sensibles</div>
+        </div>
+    </div>
+    <div class="content">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title" th:text="${logsPage.totalElements} + ' événements'">0 événements</div>
+            </div>
+            <div class="card-body">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Utilisateur</th>
+                        <th>Action</th>
+                        <th>Entité</th>
+                        <th>ID</th>
+                        <th>Détails</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="l : ${logs}">
+                        <td th:text="${#temporals.format(l.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
+                        <td th:text="${l.username}">--</td>
+                        <td th:text="${l.action}">--</td>
+                        <td th:text="${l.entityType}">--</td>
+                        <td th:text="${l.entityId != null ? l.entityId : '—'}">—</td>
+                        <td th:text="${l.details != null ? l.details : '—'}">—</td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div style="display:flex;justify-content:space-between;margin-top:12px" th:if="${logsPage.totalPages > 1}">
+                    <a class="action-btn btn-edit" th:if="${logsPage.hasPrevious()}"
+                       th:href="@{/audit-logs(page=${logsPage.number-1},size=${logsPage.size})}">Précédent</a>
+                    <a class="action-btn btn-edit" th:if="${logsPage.hasNext()}"
+                       th:href="@{/audit-logs(page=${logsPage.number+1},size=${logsPage.size})}">Suivant</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>
