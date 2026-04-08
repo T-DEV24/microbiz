@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 @Controller
 @RequestMapping("/ventes")
