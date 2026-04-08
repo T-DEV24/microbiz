@@ -33,6 +33,7 @@
         .alert-toast { position:fixed; top:20px; right:20px; z-index:9999; min-width:340px; animation:slideIn .3s ease; }
         @keyframes slideIn { from { transform:translateX(110%); opacity:0; } to { transform:translateX(0); opacity:1; } }
     </style>
+  <link th:href="@{/css/style.css}" rel="stylesheet">
 </head>
 <body>
 
@@ -51,6 +52,7 @@
         <a href="/clients"      class="nav-link"><i class="bi bi-people"></i> Clients</a>
         <div class="nav-section">Finance</div>
         <a href="/depenses"     class="nav-link active"><i class="bi bi-credit-card"></i> Dépenses</a>
+        <a href="/factures"     class="nav-link"><i class="bi bi-receipt"></i> Factures</a>
         <a href="/statistiques" class="nav-link"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
         <div class="nav-section" sec:authorize="hasRole('ADMIN')">Système</div>
         <a href="/utilisateurs" class="nav-link" sec:authorize="hasRole('ADMIN')"><i class="bi bi-shield-lock"></i> Utilisateurs</a>
