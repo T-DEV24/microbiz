@@ -25,6 +25,7 @@ public class AchatCommandeService {
     }
 
     public AchatCommande create(AchatCommande achat) {
+        validerAchat(achat);
         if (achat.getStatut() == null) {
             achat.setStatut(AchatCommande.StatutAchat.BROUILLON);
         }
@@ -37,9 +38,13 @@ public class AchatCommandeService {
     public AchatCommande receptionner(Long id) {
         AchatCommande achat = achatCommandeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Commande achat introuvable"));
+        validerAchat(achat);
 
         if (achat.getStatut() == AchatCommande.StatutAchat.RECEPTIONNEE) {
             return achat;
+        }
+        if (achat.getStatut() == AchatCommande.StatutAchat.ANNULEE) {
+            throw new RuntimeException("Une commande annulée ne peut pas être réceptionnée.");
         }
 
         Produit produit = produitRepository.findById(achat.getProduit().getId())
@@ -60,5 +65,20 @@ public class AchatCommandeService {
                 .build());
 
         return achatCommandeRepository.save(achat);
+    }
+
+    private void validerAchat(AchatCommande achat) {
+        if (achat == null) {
+            throw new RuntimeException("La commande d'achat est obligatoire.");
+        }
+        if (achat.getProduit() == null || achat.getProduit().getId() == null) {
+            throw new RuntimeException("Le produit de la commande est obligatoire.");
+        }
+        if (achat.getQuantite() == null || achat.getQuantite() <= 0) {
+            throw new RuntimeException("La quantité commandée doit être strictement positive.");
+        }
+        if (achat.getCoutUnitaire() == null || achat.getCoutUnitaire() <= 0) {
+            throw new RuntimeException("Le coût unitaire doit être strictement positif.");
+        }
     }
 }
