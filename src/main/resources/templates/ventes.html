@@ -195,20 +195,25 @@
                   th:text="${#lists.size(ventes)} + ' entrées'"></span>
           </div>
 
-          <!-- Filtre de date -->
+          <!-- Filtre de date + recherche -->
           <div class="p-3 pb-0">
             <form th:action="@{/ventes}" method="get" class="row g-2 mb-3 align-items-end">
-              <div class="col-5">
+              <div class="col-md-3">
                 <label class="form-label form-label-sm mb-1">Du</label>
                 <input type="date" class="form-control form-control-sm" name="debut"
                        th:value="${debut != null ? #temporals.format(debut,'yyyy-MM-dd') : ''}">
               </div>
-              <div class="col-5">
+              <div class="col-md-3">
                 <label class="form-label form-label-sm mb-1">Au</label>
                 <input type="date" class="form-control form-control-sm" name="fin"
                        th:value="${fin != null ? #temporals.format(fin,'yyyy-MM-dd') : ''}">
               </div>
-              <div class="col-2 d-flex gap-1">
+              <div class="col-md-4">
+                <label class="form-label form-label-sm mb-1">Recherche</label>
+                <input type="text" class="form-control form-control-sm" name="q"
+                       th:value="${q}" placeholder="Produit ou client">
+              </div>
+              <div class="col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-sm btn-primary flex-grow-1" title="Filtrer">
                   <i class="bi bi-funnel"></i>
                 </button>
@@ -222,7 +227,7 @@
             <div th:if="${filtreActif and caFiltre != null}"
                  class="alert alert-info d-flex align-items-center gap-2 py-2 mb-2" style="font-size:12px">
               <i class="bi bi-funnel-fill flex-shrink-0"></i>
-              Période filtrée —
+              Résultats filtrés —
               <strong th:text="${#lists.size(ventes)} + ' ventes'"></strong> —
               Total : <strong th:text="${#numbers.formatDecimal(caFiltre,0,'COMMA',0,'POINT')} + ' FCFA'"></strong>
             </div>

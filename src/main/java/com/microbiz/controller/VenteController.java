@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 @Controller
 @RequestMapping("/ventes")
@@ -25,20 +26,49 @@ public class VenteController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate debut,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin,
-            Model model) {
+            @RequestParam(required = false) String q,
+            Model model,
+            RedirectAttributes ra) {
 
         List<Vente> ventes;
         Double caFiltre = null;
+        boolean filtreActif;
 
         if (debut != null && fin != null) {
+            if (fin.isBefore(debut)) {
+                ra.addFlashAttribute("erreur", "La date de fin doit être postérieure ou égale à la date de début.");
+                return "redirect:/ventes";
+            }
             ventes   = venteService.getVentesParPeriode(debut, fin);
             caFiltre = venteService.getCAParPeriode(debut, fin);
             model.addAttribute("debut", debut);
             model.addAttribute("fin",   fin);
-            model.addAttribute("filtreActif", true);
+            filtreActif = true;
         } else {
             ventes = venteService.getVentesRecentes();
-            model.addAttribute("filtreActif", false);
+            filtreActif = false;
+        }
+
+        String recherche = q == null ? "" : q.trim();
+        if (!recherche.isEmpty()) {
+            String normalized = recherche.toLowerCase(Locale.ROOT);
+            ventes = ventes.stream()
+                    .filter(v -> {
+                        String produit = v.getProduit() != null && v.getProduit().getNom() != null
+                                ? v.getProduit().getNom().toLowerCase(Locale.ROOT) : "";
+                        String client = v.getClient() != null && v.getClient().getNom() != null
+                                ? v.getClient().getNom().toLowerCase(Locale.ROOT) : "";
+                        return produit.contains(normalized) || client.contains(normalized);
+                    })
+                    .toList();
+            filtreActif = true;
+        }
+
+        double caVisible = ventes.stream()
+                .mapToDouble(Vente::getMontantTotal)
+                .sum();
+        if (filtreActif) {
+            caFiltre = caVisible;
         }
 
         model.addAttribute("ventes",   ventes);
@@ -47,6 +77,8 @@ public class VenteController {
         model.addAttribute("caJour",   venteService.getCADuJour());
         model.addAttribute("nbVentes", venteService.getNbTransactionsDuJour());
         model.addAttribute("caFiltre", caFiltre);
+        model.addAttribute("filtreActif", filtreActif);
+        model.addAttribute("q", recherche);
         return "ventes";
     }
 
@@ -66,8 +98,9 @@ public class VenteController {
                 throw new RuntimeException("La quantité doit être au moins 1.");
             if (prixUnitaire <= 0)
                 throw new RuntimeException("Le prix unitaire est invalide.");
-            if (produit.getStockActuel() < quantite)
-                throw new RuntimeException("Stock insuffisant — " + produit.getStockActuel() + " unité(s) disponible(s).");
+            int stockActuel = produit.getStockActuel() == null ? 0 : produit.getStockActuel();
+            if (stockActuel < quantite)
+                throw new RuntimeException("Stock insuffisant — " + stockActuel + " unité(s) disponible(s).");
 
             Vente vente = new Vente();
             vente.setProduit(produit);
@@ -78,7 +111,7 @@ public class VenteController {
 
             venteService.enregistrerVente(vente);
 
-            int stockRestant = produit.getStockActuel() - quantite;
+            int stockRestant = stockActuel - quantite;
             long total = (long)(quantite * prixUnitaire);
             ra.addFlashAttribute("succes",
                     "Vente enregistrée — " + quantite + " × « " + produit.getNom()
