@@ -25,12 +25,17 @@ public class VenteController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate debut,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin,
-            Model model) {
+            Model model,
+            RedirectAttributes ra) {
 
         List<Vente> ventes;
         Double caFiltre = null;
 
         if (debut != null && fin != null) {
+            if (fin.isBefore(debut)) {
+                ra.addFlashAttribute("erreur", "La date de fin doit être postérieure ou égale à la date de début.");
+                return "redirect:/ventes";
+            }
             ventes   = venteService.getVentesParPeriode(debut, fin);
             caFiltre = venteService.getCAParPeriode(debut, fin);
             model.addAttribute("debut", debut);
@@ -66,8 +71,9 @@ public class VenteController {
                 throw new RuntimeException("La quantité doit être au moins 1.");
             if (prixUnitaire <= 0)
                 throw new RuntimeException("Le prix unitaire est invalide.");
-            if (produit.getStockActuel() < quantite)
-                throw new RuntimeException("Stock insuffisant — " + produit.getStockActuel() + " unité(s) disponible(s).");
+            int stockActuel = produit.getStockActuel() == null ? 0 : produit.getStockActuel();
+            if (stockActuel < quantite)
+                throw new RuntimeException("Stock insuffisant — " + stockActuel + " unité(s) disponible(s).");
 
             Vente vente = new Vente();
             vente.setProduit(produit);
@@ -78,7 +84,7 @@ public class VenteController {
 
             venteService.enregistrerVente(vente);
 
-            int stockRestant = produit.getStockActuel() - quantite;
+            int stockRestant = stockActuel - quantite;
             long total = (long)(quantite * prixUnitaire);
             ra.addFlashAttribute("succes",
                     "Vente enregistrée — " + quantite + " × « " + produit.getNom()
