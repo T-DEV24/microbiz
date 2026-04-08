@@ -23,12 +23,17 @@ public class DepenseController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate debut,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin,
-            Model model) {
+            Model model,
+            RedirectAttributes ra) {
 
         List<Depense> depenses;
         Double totalFiltre = null;
 
         if (debut != null && fin != null) {
+            if (fin.isBefore(debut)) {
+                ra.addFlashAttribute("erreur", "La date de fin doit être postérieure ou égale à la date de début.");
+                return "redirect:/depenses";
+            }
             depenses    = depenseService.getDepensesParPeriode(debut, fin);
             totalFiltre = depenseService.getTotalParPeriode(debut, fin);
             model.addAttribute("debut", debut);
@@ -61,7 +66,7 @@ public class DepenseController {
         return "redirect:/depenses";
     }
 
-    @GetMapping("/supprimer/{id}")
+    @PostMapping("/supprimer/{id}")
     public String supprimer(@PathVariable Long id, RedirectAttributes ra) {
         depenseService.deleteById(id);
         ra.addFlashAttribute("succes", "Dépense supprimée.");

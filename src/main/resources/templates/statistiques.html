@@ -60,6 +60,7 @@
         <a href="/statistiques" class="nav-link active"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
         <div class="nav-section" sec:authorize="hasRole('ADMIN')">Système</div>
         <a href="/utilisateurs" class="nav-link" sec:authorize="hasRole('ADMIN')"><i class="bi bi-shield-lock"></i> Utilisateurs</a>
+        <a href="/audit-logs" class="nav-link" sec:authorize="hasRole('ADMIN')"><i class="bi bi-journal-check"></i> Audit logs</a>
     </nav>
     <div class="p-3" style="border-top:1px solid rgba(255,255,255,.07)">
         <div class="d-flex align-items-center gap-2">
@@ -76,10 +77,24 @@
             <h1 class="h5 mb-0 fw-semibold">Statistiques</h1>
             <div class="text-muted" style="font-size:12px">Analyse financière complète de votre activité</div>
         </div>
-        <!-- NOUVELLE FONCTIONNALITÉ 3 : bouton export PDF -->
-        <a href="/statistiques/export-pdf" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
-            <i class="bi bi-file-earmark-pdf"></i> Exporter PDF
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <form th:action="@{/statistiques}" method="get" class="d-flex gap-1">
+                <button type="submit" name="periode" value="mois"
+                        th:class="'btn btn-sm ' + (${periode == 'mois'} ? 'btn-primary' : 'btn-outline-secondary')">Mensuel</button>
+                <button type="submit" name="periode" value="semaine"
+                        th:class="'btn btn-sm ' + (${periode == 'semaine'} ? 'btn-primary' : 'btn-outline-secondary')">Hebdo</button>
+                <button type="submit" name="periode" value="semestre"
+                        th:class="'btn btn-sm ' + (${periode == 'semestre'} ? 'btn-primary' : 'btn-outline-secondary')">Semestriel</button>
+                <select name="top" class="form-select form-select-sm" style="width:auto">
+                    <option value="5" th:selected="${top == 5}">Top 5</option>
+                    <option value="8" th:selected="${top == 8}">Top 8</option>
+                    <option value="10" th:selected="${top == 10}">Top 10</option>
+                </select>
+            </form>
+            <a href="/statistiques/export-pdf" class="btn btn-danger btn-sm d-flex align-items-center gap-1">
+                <i class="bi bi-file-earmark-pdf"></i> Exporter PDF
+            </a>
+        </div>
     </div>
 
     <div class="p-4">
@@ -148,7 +163,11 @@
         <div class="row g-3 mb-4">
             <div class="col-lg-7">
                 <div class="chart-card">
-                    <div class="card-header"><i class="bi bi-bar-chart me-2 text-primary"></i>Évolution CA mensuel</div>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-bar-chart me-2 text-primary"></i>Évolution du CA</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary"
+                              th:text="${periode == 'semaine' ? '8 dernières semaines' : (periode == 'semestre' ? 'Par semestre' : 'Par mois')}">Par mois</span>
+                    </div>
                     <div class="p-3"><div style="position:relative;height:240px"><canvas id="chartCA"></canvas></div></div>
                 </div>
             </div>
@@ -170,7 +189,7 @@
             </div>
             <div class="col-lg-6">
                 <div class="chart-card">
-                    <div class="card-header"><i class="bi bi-trophy me-2 text-warning"></i>Top 5 produits</div>
+                    <div class="card-header"><i class="bi bi-trophy me-2 text-warning"></i>Top produits (Top <span th:text="${top}">5</span>)</div>
                     <div th:each="item, stat : ${topProduits}" class="top-item">
                         <div class="top-rank"
                              th:classappend="${stat.index==0}?' gold':(${stat.index==1}?' silver':(${stat.index==2}?' bronze':''))"
@@ -190,36 +209,33 @@
             </div>
         </div>
 
-        <!-- Tableau récapitulatif formules métier -->
+        <!-- Tableau récapitulatif financier -->
         <div class="chart-card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-table me-2"></i>Récapitulatif financier — Formules métier</span>
+                <span><i class="bi bi-table me-2"></i>Récapitulatif financier</span>
                 <a href="/statistiques/export-pdf" class="btn btn-sm btn-outline-danger">
                     <i class="bi bi-file-earmark-pdf me-1"></i>Exporter PDF
                 </a>
             </div>
             <table class="table mb-0 formula-table">
                 <thead>
-                <tr><th>Indicateur</th><th>Formule</th><th>Valeur</th><th>Interprétation</th></tr>
+                <tr><th>Indicateur</th><th>Valeur</th><th>Interprétation</th></tr>
                 </thead>
                 <tbody>
                 <tr>
                     <td style="font-weight:500">Chiffre d'affaires</td>
-                    <td style="font-family:'DM Mono',monospace;font-size:12px;color:#6b7280">SUM(quantite × prix_unitaire)</td>
                     <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:#2563eb"
                         th:text="${#numbers.formatDecimal(caTotal,0,'COMMA',0,'POINT')} + ' FCFA'">0</td>
                     <td><span class="badge bg-primary-subtle text-primary" style="font-size:11px">Total ventes</span></td>
                 </tr>
                 <tr>
                     <td style="font-weight:500">Total dépenses</td>
-                    <td style="font-family:'DM Mono',monospace;font-size:12px;color:#6b7280">SUM(montant)</td>
                     <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:#dc2626"
                         th:text="${#numbers.formatDecimal(depenses,0,'COMMA',0,'POINT')} + ' FCFA'">0</td>
                     <td><span class="badge bg-danger-subtle text-danger" style="font-size:11px">Charges</span></td>
                 </tr>
                 <tr>
                     <td style="font-weight:500">Bénéfice net</td>
-                    <td style="font-family:'DM Mono',monospace;font-size:12px;color:#6b7280">CA − Dépenses</td>
                     <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600"
                         th:style="${benefice>=0}?'color:#059669':'color:#dc2626'"
                         th:text="${#numbers.formatDecimal(benefice,0,'COMMA',0,'POINT')} + ' FCFA'">0</td>
@@ -230,7 +246,6 @@
                 </tr>
                 <tr>
                     <td style="font-weight:500">Marge bénéficiaire</td>
-                    <td style="font-family:'DM Mono',monospace;font-size:12px;color:#6b7280">(Bénéfice / CA) × 100</td>
                     <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600"
                         th:style="${marge>=40}?'color:#059669':(${marge>=20}?'color:#d97706':'color:#dc2626')"
                         th:text="${#numbers.formatDecimal(marge,0,'COMMA',1,'POINT')} + ' %'">0%</td>

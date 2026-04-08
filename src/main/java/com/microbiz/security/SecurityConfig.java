@@ -54,7 +54,7 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
                         // Routes ADMIN uniquement
-                        .requestMatchers("/utilisateurs/**").hasRole("ADMIN")
+                        .requestMatchers("/utilisateurs/**", "/audit-logs/**").hasRole("ADMIN")
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )
@@ -72,10 +72,7 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .permitAll()
-                )
-                // CSRF désactivé temporairement pour simplifier le dev
-                // À réactiver en production avec les tokens dans les forms
-                .csrf(csrf -> csrf.disable());
+                );
 
         return http.build();
     }

@@ -65,4 +65,18 @@ public class StatistiqueService {
         }
         return result;
     }
+
+    /** Évolution SEMESTRIELLE (S1/S2) à partir des données mensuelles */
+    public Map<String, Double> getEvolutionSemestrielle() {
+        Map<String, Double> result = new LinkedHashMap<>();
+        for (Object[] row : venteRepository.getEvolutionMensuelle()) {
+            int mois = ((Number) row[0]).intValue();
+            int annee = ((Number) row[1]).intValue();
+            double ca = ((Number) row[2]).doubleValue();
+
+            String semestre = mois <= 6 ? "S1 " + annee : "S2 " + annee;
+            result.put(semestre, result.getOrDefault(semestre, 0.0) + ca);
+        }
+        return result;
+    }
 }
