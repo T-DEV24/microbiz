@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Clients', 'Gestion des clients', 'clients')">
+  <div th:fragment="content">
+    <div class="topbar">
+        <div>
+            <div class="page-title">Clients</div>
+            <div class="page-sub" th:text="${#lists.size(clients)} + ' clients enregistrés'">0 clients</div>
+        </div>
+        <a href="/clients/nouveau" class="btn-primary-custom">+ Nouveau client</a>
+    </div>
+    <div class="content">
+        <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
+
+        <div class="metrics-row">
+            <div class="metric-card">
+                <div class="metric-label">Total clients</div>
+                <div class="metric-value" th:text="${#lists.size(clients)}">0</div>
+                <div class="metric-sub">Base clients</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avec email</div>
+                <div class="metric-value" th:text="${#lists.size(clients.?[email != null and !email.isEmpty()])}">0</div>
+                <div class="metric-sub">Contactables</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avec téléphone</div>
+                <div class="metric-value" th:text="${#lists.size(clients.?[telephone != null and !telephone.isEmpty()])}">0</div>
+                <div class="metric-sub">Contactables</div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Formulaire ajout rapide -->
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header"><div class="card-title">Ajouter un client</div></div>
+                <div class="card-body">
+                    <form th:action="@{/clients/sauvegarder}" method="post">
+                        <label class="form-label-dark">Nom complet *</label>
+                        <input type="text" class="form-control-dark" name="nom" placeholder="Ex : Marie Ngo" required>
+                        <label class="form-label-dark">Téléphone</label>
+                        <input type="text" class="form-control-dark" name="telephone" placeholder="+237 670 000 000">
+                        <label class="form-label-dark">Email</label>
+                        <input type="email" class="form-control-dark" name="email" placeholder="client@email.com">
+                        <button type="submit" class="btn-submit">Ajouter le client</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Liste clients -->
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header">
+                    <div class="card-title">Base clients</div>
+                    <span style="font-size:12px;color:var(--muted)" th:text="${#lists.size(clients)} + ' clients'"></span>
+                </div>
+                <div th:if="${#lists.isEmpty(clients)}" class="empty-state">Aucun client enregistré.</div>
+                <table th:if="${not #lists.isEmpty(clients)}">
+                    <thead><tr><th>Client</th><th>Téléphone</th><th>Email</th><th>Inscription</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="c : ${clients}">
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <div class="client-avatar" th:text="${#strings.substring(c.nom,0,1).toUpperCase()}">A</div>
+                                <span style="font-weight:500" th:text="${c.nom}">--</span>
+                            </div>
+                        </td>
+                        <td th:text="${c.telephone != null ? c.telephone : '—'}" style="color:var(--muted);font-size:12px">—</td>
+                        <td th:text="${c.email != null ? c.email : '—'}" style="color:var(--muted);font-size:12px">—</td>
+                        <td th:text="${c.dateInscription != null ? #temporals.format(c.dateInscription,'dd/MM/yyyy') : '—'}" style="color:var(--muted);font-size:12px">—</td>
+                        <td>
+                            <a th:href="@{/clients/modifier/{id}(id=${c.id})}" class="action-btn btn-edit">Modifier</a>
+                            <a th:href="@{/clients/supprimer/{id}(id=${c.id})}" class="action-btn btn-delete"
+                               onclick="return confirm('Supprimer ce client ?')">Supprimer</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</html>

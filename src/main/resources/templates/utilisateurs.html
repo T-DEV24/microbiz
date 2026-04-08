@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Utilisateurs', 'Administration', 'utilisateurs')">
+  <div th:fragment="content">
+    <div class="topbar">
+        <div>
+            <div class="page-title">Gestion des utilisateurs</div>
+            <div class="page-sub">Accès réservé aux administrateurs</div>
+        </div>
+    </div>
+    <div class="content">
+
+        <div class="admin-banner">
+            ⚠ Zone administrateur — Seuls les comptes ROLE_ADMIN peuvent accéder à cette page.
+        </div>
+
+        <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
+
+        <div class="grid-2">
+            <!-- Formulaire ajout utilisateur -->
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header"><div class="card-title">Ajouter un utilisateur</div></div>
+                <div class="card-body">
+                    <form th:action="@{/utilisateurs/sauvegarder}" method="post">
+                        <label class="form-label-dark">Nom complet *</label>
+                        <input type="text" class="form-control-dark" name="nom" placeholder="Ex : Jean Dupont" required>
+                        <label class="form-label-dark">Email *</label>
+                        <input type="email" class="form-control-dark" name="email" placeholder="jean@email.com" required>
+                        <label class="form-label-dark">Mot de passe *</label>
+                        <input type="password" class="form-control-dark" name="motDePasse" placeholder="Minimum 6 caractères" required>
+                        <label class="form-label-dark">Rôle *</label>
+                        <select class="form-control-dark" name="role" required>
+                            <option value="ROLE_USER">Utilisateur simple</option>
+                            <option value="ROLE_ADMIN">Administrateur</option>
+                        </select>
+                        <button type="submit" class="btn-submit">Créer l'utilisateur</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Liste utilisateurs -->
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header">
+                    <div class="card-title">Utilisateurs actifs</div>
+                    <span style="font-size:12px;color:var(--muted)" th:if="${utilisateurs != null}"
+                          th:text="${#lists.size(utilisateurs)} + ' comptes'"></span>
+                </div>
+                <div th:if="${utilisateurs == null or #lists.isEmpty(utilisateurs)}" style="padding:30px;text-align:center;color:var(--muted);font-size:13px">
+                    Aucun utilisateur.
+                </div>
+                <table th:if="${utilisateurs != null and not #lists.isEmpty(utilisateurs)}">
+                    <thead><tr><th>Utilisateur</th><th>Email</th><th>Rôle</th></tr></thead>
+                    <tbody>
+                    <tr th:each="u : ${utilisateurs}">
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <div class="user-avatar" th:classappend="${u.role == 'ROLE_ADMIN'} ? 'admin'"
+                                     th:text="${#strings.substring(u.nom,0,1).toUpperCase()}">A</div>
+                                <div>
+                                    <div style="font-weight:500" th:text="${u.nom}">--</div>
+                                    <div style="font-size:11px;color:var(--muted)" th:text="${u.isAdmin()} ? 'Administrateur' : 'Utilisateur'">--</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color:var(--muted);font-size:12px" th:text="${u.email}">--</td>
+                        <td>
+                            <span class="badge badge-amber" th:if="${u.role == 'ROLE_ADMIN'}">Admin</span>
+                            <span class="badge" style="background:rgba(255,255,255,.06);color:var(--muted)" th:if="${u.role != 'ROLE_ADMIN'}">Utilisateur</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</html>
