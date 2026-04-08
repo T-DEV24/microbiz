@@ -44,6 +44,19 @@ public class DepenseService {
         return t != null ? t : 0.0;
     }
 
+
+    public Map<String, Double> getDepensesParCategorie(LocalDate debut, LocalDate fin) {
+        Map<String, Double> result = new LinkedHashMap<>();
+        for (Depense depense : depenseRepository.findByDateDepenseBetweenOrderByDateDepenseDesc(debut, fin)) {
+            String categorie = depense.getCategorie() == null || depense.getCategorie().isBlank()
+                    ? "Autres"
+                    : depense.getCategorie();
+            double montant = depense.getMontant() == null ? 0.0 : depense.getMontant();
+            result.put(categorie, result.getOrDefault(categorie, 0.0) + montant);
+        }
+        return result;
+    }
+
     public Map<String, Double> getDepensesParCategorie() {
         Map<String, Double> result = new LinkedHashMap<>();
         for (Object[] row : depenseRepository.getDepensesParCategorie()) {
