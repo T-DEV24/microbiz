@@ -2,8 +2,10 @@ package com.microbiz.service;
 
 import com.microbiz.model.*;
 import com.microbiz.repository.*;
+import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -22,6 +24,10 @@ public class VenteService {
 
     public List<Vente> getVentesRecentes() {
         return venteRepository.findTop20ByOrderByDateVenteDesc();
+    }
+
+    public Page<Vente> getVentesFiltrees(LocalDate debut, LocalDate fin, String q, Pageable pageable) {
+        return venteRepository.findByFiltres(debut, fin, q, pageable);
     }
 
     public List<Vente> getVentesParPeriode(LocalDate debut, LocalDate fin) {

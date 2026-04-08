@@ -3,6 +3,9 @@ package com.microbiz.controller;
 import com.microbiz.model.*;
 import com.microbiz.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,10 +30,19 @@ public class VenteController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin,
             @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "dateVente") String sort,
+            @RequestParam(defaultValue = "desc") String dir,
             Model model,
             RedirectAttributes ra) {
 
-        List<Vente> ventes;
+        List<String> allowedSorts = List.of("dateVente", "prixUnitaire", "quantite", "id");
+        String sortField = allowedSorts.contains(sort) ? sort : "dateVente";
+        Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageable = PageRequest.of(Math.max(0, page), Math.min(Math.max(5, size), 100), Sort.by(direction, sortField));
+
+        Page<Vente> ventesPage;
         Double caFiltre = null;
         boolean filtreActif;
 
@@ -39,39 +51,29 @@ public class VenteController {
                 ra.addFlashAttribute("erreur", "La date de fin doit être postérieure ou égale à la date de début.");
                 return "redirect:/ventes";
             }
-            ventes   = venteService.getVentesParPeriode(debut, fin);
-            caFiltre = venteService.getCAParPeriode(debut, fin);
+            ventesPage = venteService.getVentesFiltrees(debut, fin, q, pageable);
             model.addAttribute("debut", debut);
             model.addAttribute("fin",   fin);
             filtreActif = true;
         } else {
-            ventes = venteService.getVentesRecentes();
+            ventesPage = venteService.getVentesFiltrees(null, null, q, pageable);
             filtreActif = false;
         }
 
         String recherche = q == null ? "" : q.trim();
         if (!recherche.isEmpty()) {
-            String normalized = recherche.toLowerCase(Locale.ROOT);
-            ventes = ventes.stream()
-                    .filter(v -> {
-                        String produit = v.getProduit() != null && v.getProduit().getNom() != null
-                                ? v.getProduit().getNom().toLowerCase(Locale.ROOT) : "";
-                        String client = v.getClient() != null && v.getClient().getNom() != null
-                                ? v.getClient().getNom().toLowerCase(Locale.ROOT) : "";
-                        return produit.contains(normalized) || client.contains(normalized);
-                    })
-                    .toList();
             filtreActif = true;
         }
 
-        double caVisible = ventes.stream()
+        double caVisible = ventesPage.getContent().stream()
                 .mapToDouble(Vente::getMontantTotal)
                 .sum();
         if (filtreActif) {
             caFiltre = caVisible;
         }
 
-        model.addAttribute("ventes",   ventes);
+        model.addAttribute("ventes",   ventesPage.getContent());
+        model.addAttribute("ventesPage", ventesPage);
         model.addAttribute("produits", produitService.findAll());
         model.addAttribute("clients",  clientService.findAll());
         model.addAttribute("caJour",   venteService.getCADuJour());
@@ -79,6 +81,9 @@ public class VenteController {
         model.addAttribute("caFiltre", caFiltre);
         model.addAttribute("filtreActif", filtreActif);
         model.addAttribute("q", recherche);
+        model.addAttribute("sort", sortField);
+        model.addAttribute("dir", direction.name().toLowerCase());
+        model.addAttribute("size", pageable.getPageSize());
         return "ventes";
     }
 
@@ -125,7 +130,7 @@ public class VenteController {
     }
 
     // AMÉLIORATION 2 : suppression restaure le stock + message explicite
-    @GetMapping("/supprimer/{id}")
+    @PostMapping("/supprimer/{id}")
     public String supprimer(@PathVariable Long id, RedirectAttributes ra) {
         try {
             venteService.supprimerVente(id);

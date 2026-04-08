@@ -66,7 +66,7 @@ public class DepenseController {
         return "redirect:/depenses";
     }
 
-    @GetMapping("/supprimer/{id}")
+    @PostMapping("/supprimer/{id}")
     public String supprimer(@PathVariable Long id, RedirectAttributes ra) {
         depenseService.deleteById(id);
         ra.addFlashAttribute("succes", "Dépense supprimée.");

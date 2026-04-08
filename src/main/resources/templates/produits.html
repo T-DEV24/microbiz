@@ -70,7 +70,7 @@
     <div>
       <h1 class="h5 mb-0 fw-semibold">Produits</h1>
       <div class="text-muted" style="font-size:12px"
-           th:text="${#lists.size(produits)} + ' produits enregistrés'">0 produits</div>
+           th:text="${produitsPage != null ? produitsPage.totalElements : #lists.size(produits)} + ' produits enregistrés'">0 produits</div>
     </div>
     <a href="/produits/nouveau" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
       <i class="bi bi-plus-lg"></i> Nouveau produit
@@ -230,16 +230,35 @@
                   <i class="bi bi-plus-circle" style="font-size:11px"></i>
                 </button>
               </form>
-              <a th:href="@{/produits/supprimer/{id}(id=${p.id})}"
-                 class="btn btn-sm btn-outline-danger py-0 px-2"
-                 onclick="return confirm('Supprimer ce produit ?')" title="Supprimer">
-                <i class="bi bi-trash" style="font-size:11px"></i>
-              </a>
+              <form th:action="@{/produits/supprimer/{id}(id=${p.id})}" method="post" style="display:inline">
+                <button type="submit"
+                        class="btn btn-sm btn-outline-danger py-0 px-2"
+                        onclick="return confirm('Supprimer ce produit ?')" title="Supprimer">
+                  <i class="bi bi-trash" style="font-size:11px"></i>
+                </button>
+              </form>
             </div>
           </td>
         </tr>
         </tbody>
       </table>
+      <div class="p-3 border-top d-flex justify-content-between align-items-center"
+           th:if="${produitsPage != null and produitsPage.totalPages > 1}">
+        <small class="text-muted"
+               th:text="'Page ' + (${produitsPage.number}+1) + ' / ' + ${produitsPage.totalPages}"></small>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary"
+             th:if="${produitsPage.hasPrevious()}"
+             th:href="@{/produits(page=${produitsPage.number-1},size=${size},sort=${sort},dir=${dir})}">
+            Précédent
+          </a>
+          <a class="btn btn-sm btn-outline-secondary"
+             th:if="${produitsPage.hasNext()}"
+             th:href="@{/produits(page=${produitsPage.number+1},size=${size},sort=${sort},dir=${dir})}">
+            Suivant
+          </a>
+        </div>
+      </div>
     </div>
 
   </div>
