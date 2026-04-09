@@ -81,6 +81,7 @@ public class SecurityConfig {
                         ).hasAnyRole("ADMIN", "USER")
                         // ROLE_COMMERCIAL : accès ventes/clients/produits
                         .requestMatchers("/ventes/**", "/clients/**", "/produits/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
+                        .requestMatchers("/api/kpis").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
                         // ROLE_COMMERCIAL : stats en lecture seule
                         .requestMatchers(HttpMethod.GET, "/statistiques/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
                         .requestMatchers(HttpMethod.POST, "/statistiques/**").hasAnyRole("ADMIN", "USER")

@@ -41,12 +41,11 @@
             </div>
             <div>
                 <label class="form-label-dark">Catégorie</label>
-                <select class="form-control-dark" th:field="*{categorie}">
-                    <option value="Boissons">Boissons</option>
-                    <option value="Alimentaire">Alimentaire</option>
-                    <option value="Cosmetique">Cosmétique</option>
-                    <option value="Autre">Autre</option>
-                </select>
+                <input type="text" class="form-control-dark" th:field="*{categorie}" list="categoriesList"
+                       placeholder="Ex : Boissons">
+                <datalist id="categoriesList">
+                    <option th:each="c : ${categories}" th:value="${c.nom}">Catégorie</option>
+                </datalist>
             </div>
             <div>
                 <label class="form-label-dark">Stock actuel</label>

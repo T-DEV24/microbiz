@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class DataInitializer implements CommandLineRunner {
     @Autowired private UtilisateurRepository utilisateurRepo;
     @Autowired private ProduitRepository produitRepo;
+    @Autowired private CategorieRepository categorieRepo;
     @Autowired private ClientRepository clientRepo;
     @Autowired private PasswordEncoder passwordEncoder;
     @Value("${microbiz.seed.demo-data:false}") private boolean seedDemoData;
@@ -56,6 +57,12 @@ public class DataInitializer implements CommandLineRunner {
         }
         // Produits de demo
         if (produitRepo.count() == 0) {
+            if (categorieRepo.count() == 0) {
+                categorieRepo.save(Categorie.builder().nom("Boissons").build());
+                categorieRepo.save(Categorie.builder().nom("Alimentaire").build());
+                categorieRepo.save(Categorie.builder().nom("Cosmétique").build());
+                categorieRepo.save(Categorie.builder().nom("Autres").build());
+            }
             produitRepo.save(Produit.builder().nom("Jus de gingembre")
                     .categorie("Boissons").prixVente(600.0)
                     .coutRevient(250.0).stockActuel(50).build());

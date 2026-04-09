@@ -19,6 +19,7 @@ public class VenteService {
     @Autowired private VenteRepository   venteRepository;
     @Autowired private ProduitRepository produitRepository;
     @Autowired private CurrencyRateService currencyRateService;
+    @Autowired private EmailNotificationService emailNotificationService;
 
     public List<Vente> findAll()   {
         String tenant = TenantContext.getTenant();
@@ -86,9 +87,12 @@ public class VenteService {
         if (stockActuel < quantite) {
             throw new RuntimeException("Stock insuffisant — " + stockActuel + " unité(s) disponible(s).");
         }
-
-        p.setStockActuel(stockActuel - quantite);
+        int nouveauStock = stockActuel - quantite;
+        p.setStockActuel(nouveauStock);
         produitRepository.save(p);
+        if (stockActuel > 10 && nouveauStock <= 10) {
+            emailNotificationService.sendStockBas(List.of(p));
+        }
         return venteRepository.save(vente);
     }
 

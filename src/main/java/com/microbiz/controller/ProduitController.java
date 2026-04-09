@@ -13,6 +13,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import com.microbiz.service.AuditLogService;
+import com.microbiz.service.CategorieService;
 import com.microbiz.service.DepenseService;
 import com.microbiz.service.ProduitService;
 import jakarta.validation.Valid;
@@ -44,6 +45,7 @@ public class ProduitController {
     @Autowired private ProduitService produitService;
     @Autowired private AuditLogService auditLogService;
     @Autowired private DepenseService depenseService;
+    @Autowired private CategorieService categorieService;
 
     @GetMapping
     public String liste(@RequestParam(defaultValue = "0") int page,
@@ -72,12 +74,14 @@ public class ProduitController {
         model.addAttribute("size", pageable.getPageSize());
         model.addAttribute("q", q == null ? "" : q);
         model.addAttribute("trash", trash);
+        model.addAttribute("categories", categorieService.findAll());
         return "produits";
     }
 
     @GetMapping("/nouveau")
     public String nouveau(Model model) {
         model.addAttribute("produit", new Produit());
+        model.addAttribute("categories", categorieService.findAll());
         return "produit-form";
     }
 
@@ -85,6 +89,7 @@ public class ProduitController {
     public String modifier(@PathVariable Long id, Model model) {
         model.addAttribute("produit", produitService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Produit introuvable")));
+        model.addAttribute("categories", categorieService.findAll());
         return "produit-form";
     }
 
@@ -96,8 +101,10 @@ public class ProduitController {
         if (result.hasErrors()) {
             model.addAttribute("produits", produitService.findAll());
             model.addAttribute("stockBas", produitService.getProduitsStockBas());
+            model.addAttribute("categories", categorieService.findAll());
             return "produits";
         }
+        produit.setCategorie(categorieService.ensureExists(produit.getCategorie()));
         boolean isNew = (produit.getId() == null);
         int oldStock = 0;
         if (!isNew) {
