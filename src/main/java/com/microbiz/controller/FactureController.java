@@ -2,6 +2,7 @@ package com.microbiz.controller;
 
 import com.microbiz.model.Facture;
 import com.microbiz.model.FactureLigne;
+import com.microbiz.service.CurrencyRateService;
 import com.microbiz.service.FactureService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,6 +26,7 @@ import java.time.LocalDate;
 public class FactureController {
 
     @Autowired private FactureService factureService;
+    @Autowired private CurrencyRateService currencyRateService;
 
     @GetMapping
     public String index(@RequestParam(defaultValue = "0") int page,
@@ -45,6 +50,8 @@ public class FactureController {
         model.addAttribute("debut", debut);
         model.addAttribute("fin", fin);
         model.addAttribute("size", pageable.getPageSize());
+        model.addAttribute("devises", java.util.List.of("XAF", "EUR", "USD", "GNF"));
+        model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
         return "factures";
     }
 
@@ -89,5 +96,16 @@ public class FactureController {
             ra.addFlashAttribute("erreur", ex.getMessage());
         }
         return "redirect:/factures";
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> pdf(@PathVariable Long id) {
+        Facture facture = factureService.findById(id);
+        byte[] pdf = factureService.genererPdf(id);
+        String numero = facture.getNumero();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + numero + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 }

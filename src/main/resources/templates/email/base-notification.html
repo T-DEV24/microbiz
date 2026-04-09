@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<body style="font-family:Arial,sans-serif;background:#f8fafc;padding:16px">
+<div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+    <div style="background:#0f172a;color:#fff;padding:14px 18px;font-weight:700" th:text="${title}">Notification</div>
+    <div style="padding:18px;color:#0f172a;line-height:1.5">
+        <p th:utext="${message}">Message</p>
+        <div th:if="${items != null and !items.isEmpty()}">
+            <ul>
+                <li th:each="item : ${items}" th:text="${item}"></li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>

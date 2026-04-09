@@ -65,7 +65,7 @@ public class UtilisateurController {
                 .nom(nom.trim())
                 .email(email.trim().toLowerCase())
                 .motDePasse(passwordEncoder.encode(motDePasse))
-                .role("ROLE_ADMIN".equals(role) ? "ROLE_ADMIN" : "ROLE_USER")
+                .role(resolveRole(role))
                 .build();
         utilisateurRepository.save(u);
         ra.addFlashAttribute("succes", "Utilisateur ajouté avec succès.");
@@ -108,5 +108,11 @@ public class UtilisateurController {
         if (value == null) return "";
         String escaped = value.replace("\"", "\"\"");
         return "\"" + escaped + "\"";
+    }
+
+    private String resolveRole(String role) {
+        if ("ROLE_ADMIN".equals(role)) return "ROLE_ADMIN";
+        if ("ROLE_COMMERCIAL".equals(role)) return "ROLE_COMMERCIAL";
+        return "ROLE_USER";
     }
 }

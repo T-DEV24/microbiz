@@ -1,10 +1,11 @@
 package com.microbiz.service;
 
 import com.microbiz.model.*;
+import com.microbiz.security.TenantContext;
 import com.microbiz.repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +18,15 @@ public class VenteService {
 
     @Autowired private VenteRepository   venteRepository;
     @Autowired private ProduitRepository produitRepository;
+    @Autowired private CurrencyRateService currencyRateService;
+    @Autowired private EmailNotificationService emailNotificationService;
 
-    public List<Vente> findAll()   { return venteRepository.findAllByOrderByDateVenteDesc(); }
+    public List<Vente> findAll()   {
+        String tenant = TenantContext.getTenant();
+        return venteRepository.findAllByOrderByDateVenteDesc().stream()
+                .filter(v -> tenant.equals(v.getTenantKey()))
+                .toList();
+    }
     public long countAll()         { return venteRepository.count(); }
 
     public long countAll(LocalDate debut, LocalDate fin) {
@@ -34,21 +42,33 @@ public class VenteService {
     }
 
     public Page<Vente> getVentesFiltrees(LocalDate debut, LocalDate fin, String q, Pageable pageable) {
-        return venteRepository.findByFiltres(debut, fin, q, pageable);
+        String tenant = TenantContext.getTenant();
+        Page<Vente> page = venteRepository.findByFiltres(debut, fin, q, pageable);
+        List<Vente> filtered = page.getContent().stream()
+                .filter(v -> tenant.equals(v.getTenantKey()))
+                .toList();
+        return new PageImpl<>(filtered, pageable, filtered.size());
     }
 
     public List<Vente> getVentesParPeriode(LocalDate debut, LocalDate fin) {
-        return venteRepository.findByDateVenteBetweenOrderByDateVenteDesc(debut, fin);
+        String tenant = TenantContext.getTenant();
+        return venteRepository.findByDateVenteBetweenOrderByDateVenteDesc(debut, fin).stream()
+                .filter(v -> tenant.equals(v.getTenantKey()))
+                .toList();
     }
 
     public Double getCAParPeriode(LocalDate debut, LocalDate fin) {
-        Double ca = venteRepository.calculerCAParPeriode(debut, fin);
-        return ca != null ? ca : 0.0;
+        return getVentesParPeriode(debut, fin).stream()
+                .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
+                .sum();
     }
 
     public Double getCADuJour() {
-        Double ca = venteRepository.calculerCADuJour(LocalDate.now());
-        return ca != null ? ca : 0.0;
+        LocalDate now = LocalDate.now();
+        return findAll().stream()
+                .filter(v -> now.equals(v.getDateVente()))
+                .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
+                .sum();
     }
 
     public long getNbTransactionsDuJour() {
@@ -67,9 +87,12 @@ public class VenteService {
         if (stockActuel < quantite) {
             throw new RuntimeException("Stock insuffisant — " + stockActuel + " unité(s) disponible(s).");
         }
-
-        p.setStockActuel(stockActuel - quantite);
+        int nouveauStock = stockActuel - quantite;
+        p.setStockActuel(nouveauStock);
         produitRepository.save(p);
+        if (stockActuel > 10 && nouveauStock <= 10) {
+            emailNotificationService.sendStockBas(List.of(p));
+        }
         return venteRepository.save(vente);
     }
 
@@ -91,20 +114,31 @@ public class VenteService {
     }
 
     public List<Map<String, Object>> getTopProduits(int n, LocalDate debut, LocalDate fin) {
-        List<Object[]> rows;
-        if (debut != null && fin != null) {
-            rows = venteRepository.findTopProduitsParPeriode(debut, fin, PageRequest.of(0, n));
-        } else {
-            rows = venteRepository.findTopProduits(PageRequest.of(0, n));
+        List<Vente> ventes = (debut != null && fin != null)
+                ? venteRepository.findByDateVenteBetweenOrderByDateVenteDesc(debut, fin)
+                : venteRepository.findAllByOrderByDateVenteDesc();
+
+        Map<Produit, long[]> quantites = new LinkedHashMap<>();
+        Map<Produit, Double> caConsolide = new LinkedHashMap<>();
+        for (Vente vente : ventes) {
+            if (vente.getProduit() == null) continue;
+            Produit produit = vente.getProduit();
+            long qte = vente.getQuantite() != null ? vente.getQuantite() : 0;
+            double caBase = currencyRateService.toBase(vente.getMontantTotal(), vente.getDevise());
+            quantites.computeIfAbsent(produit, p -> new long[]{0})[0] += qte;
+            caConsolide.put(produit, caConsolide.getOrDefault(produit, 0.0) + caBase);
         }
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Object[] row : rows) {
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("produit",  (Produit) row[0]);
-            item.put("quantite", ((Number) row[1]).longValue());
-            item.put("ca",       ((Number) row[2]).doubleValue());
-            result.add(item);
-        }
-        return result;
+
+        return caConsolide.entrySet().stream()
+                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
+                .limit(n)
+                .map(e -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("produit", e.getKey());
+                    item.put("quantite", quantites.get(e.getKey())[0]);
+                    item.put("ca", e.getValue());
+                    return item;
+                })
+                .toList();
     }
 }

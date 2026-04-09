@@ -6,6 +6,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Controller
 public class DashboardController {
@@ -45,5 +49,19 @@ public class DashboardController {
         model.addAttribute("stockBas",           produitService.getProduitsStockBas());
 
         return "dashboard";
+    }
+
+    @GetMapping("/api/kpis")
+    @ResponseBody
+    public Map<String, Object> kpis() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("ca", statistiqueService.getChiffreAffairesTotal());
+        result.put("depenses", depenseService.getTotalDepenses());
+        result.put("benefice", statistiqueService.getBeneficeNet());
+        result.put("marge", statistiqueService.getMargeBeneficiaire());
+        result.put("caJour", venteService.getCADuJour());
+        result.put("nbTransactions", venteService.getNbTransactionsDuJour());
+        result.put("timestamp", System.currentTimeMillis());
+        return result;
     }
 }

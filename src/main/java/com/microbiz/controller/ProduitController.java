@@ -2,14 +2,24 @@ package com.microbiz.controller;
 
 import com.microbiz.model.Produit;
 import com.microbiz.model.Depense;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import com.microbiz.service.AuditLogService;
+import com.microbiz.service.CategorieService;
 import com.microbiz.service.DepenseService;
 import com.microbiz.service.ProduitService;
 import jakarta.validation.Valid;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +34,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayOutputStream;
+import java.awt.Color;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
@@ -34,6 +45,7 @@ public class ProduitController {
     @Autowired private ProduitService produitService;
     @Autowired private AuditLogService auditLogService;
     @Autowired private DepenseService depenseService;
+    @Autowired private CategorieService categorieService;
 
     @GetMapping
     public String liste(@RequestParam(defaultValue = "0") int page,
@@ -62,12 +74,14 @@ public class ProduitController {
         model.addAttribute("size", pageable.getPageSize());
         model.addAttribute("q", q == null ? "" : q);
         model.addAttribute("trash", trash);
+        model.addAttribute("categories", categorieService.findAll());
         return "produits";
     }
 
     @GetMapping("/nouveau")
     public String nouveau(Model model) {
         model.addAttribute("produit", new Produit());
+        model.addAttribute("categories", categorieService.findAll());
         return "produit-form";
     }
 
@@ -75,6 +89,7 @@ public class ProduitController {
     public String modifier(@PathVariable Long id, Model model) {
         model.addAttribute("produit", produitService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Produit introuvable")));
+        model.addAttribute("categories", categorieService.findAll());
         return "produit-form";
     }
 
@@ -86,8 +101,10 @@ public class ProduitController {
         if (result.hasErrors()) {
             model.addAttribute("produits", produitService.findAll());
             model.addAttribute("stockBas", produitService.getProduitsStockBas());
+            model.addAttribute("categories", categorieService.findAll());
             return "produits";
         }
+        produit.setCategorie(categorieService.ensureExists(produit.getCategorie()));
         boolean isNew = (produit.getId() == null);
         int oldStock = 0;
         if (!isNew) {
@@ -208,22 +225,43 @@ public class ProduitController {
         try {
             Page<Produit> page = produitService.rechercherActifs(q, PageRequest.of(0, 500, Sort.by("nom").ascending()));
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Document doc = new Document();
+            Document doc = new Document(PageSize.A4, 36, 36, 42, 36);
             PdfWriter.getInstance(doc, baos);
             doc.open();
-            doc.add(new Paragraph("Export produits - " + LocalDate.now()));
+
+            Color primary = new Color(37, 99, 235);
+            Color muted = new Color(107, 114, 128);
+            Font titleFont = new Font(Font.HELVETICA, 16, Font.BOLD, primary);
+            Font infoFont = new Font(Font.HELVETICA, 10, Font.NORMAL, muted);
+
+            Paragraph title = new Paragraph("MicroBiz Pro — Export Produits", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(4f);
+            doc.add(title);
+
+            Paragraph info = new Paragraph("Généré le " + LocalDate.now() + " • " + page.getTotalElements() + " produit(s)", infoFont);
+            info.setAlignment(Element.ALIGN_CENTER);
+            info.setSpacingAfter(16f);
+            doc.add(info);
+
             PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2f, 1.5f, 1.2f, 1.2f, 0.9f});
             table.addCell("Nom");
             table.addCell("Catégorie");
             table.addCell("Prix");
             table.addCell("Coût");
             table.addCell("Stock");
+            styleHeaderRow(table, primary);
+
+            boolean odd = false;
             for (Produit p : page.getContent()) {
-                table.addCell(p.getNom() != null ? p.getNom() : "");
-                table.addCell(p.getCategorie() != null ? p.getCategorie() : "");
-                table.addCell(p.getPrixVente() != null ? String.valueOf(p.getPrixVente()) : "");
-                table.addCell(p.getCoutRevient() != null ? String.valueOf(p.getCoutRevient()) : "");
-                table.addCell(p.getStockActuel() != null ? String.valueOf(p.getStockActuel()) : "");
+                addDataCell(table, p.getNom(), odd);
+                addDataCell(table, p.getCategorie(), odd);
+                addDataCell(table, p.getPrixVente() != null ? String.valueOf(p.getPrixVente()) : "", odd);
+                addDataCell(table, p.getCoutRevient() != null ? String.valueOf(p.getCoutRevient()) : "", odd);
+                addDataCell(table, p.getStockActuel() != null ? String.valueOf(p.getStockActuel()) : "", odd);
+                odd = !odd;
             }
             doc.add(table);
             doc.close();
@@ -237,9 +275,66 @@ public class ProduitController {
         }
     }
 
+    @GetMapping("/export.xlsx")
+    public ResponseEntity<byte[]> exportXlsx(@RequestParam(required = false) String q) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("Produits");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Nom");
+            header.createCell(1).setCellValue("Catégorie");
+            header.createCell(2).setCellValue("Prix");
+            header.createCell(3).setCellValue("Coût");
+            header.createCell(4).setCellValue("Stock");
+
+            Page<Produit> page = produitService.rechercherActifs(q, PageRequest.of(0, 2000, Sort.by("nom").ascending()));
+            int rowNum = 1;
+            for (Produit p : page.getContent()) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(p.getNom() != null ? p.getNom() : "");
+                row.createCell(1).setCellValue(p.getCategorie() != null ? p.getCategorie() : "");
+                row.createCell(2).setCellValue(p.getPrixVente() != null ? p.getPrixVente() : 0);
+                row.createCell(3).setCellValue(p.getCoutRevient() != null ? p.getCoutRevient() : 0);
+                row.createCell(4).setCellValue(p.getStockActuel() != null ? p.getStockActuel() : 0);
+            }
+            for (int i = 0; i < 5; i++) sheet.autoSizeColumn(i);
+            workbook.write(baos);
+            auditLogService.log("EXPORT_XLSX", "PRODUIT", null, "Export produits XLSX");
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=produits-" + LocalDate.now() + ".xlsx")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(baos.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur export XLSX produits", e);
+        }
+    }
+
     private String escape(String value) {
         if (value == null) return "";
         String escaped = value.replace("\"", "\"\"");
         return "\"" + escaped + "\"";
+    }
+
+    private void styleHeaderRow(PdfPTable table, Color bgColor) {
+        Font headerFont = new Font(Font.HELVETICA, 10, Font.BOLD, Color.WHITE);
+        for (int i = 0; i < table.getNumberOfColumns(); i++) {
+            PdfPCell old = table.getRow(0).getCells()[i];
+            PdfPCell header = new PdfPCell(new Phrase(old.getPhrase().getContent(), headerFont));
+            header.setBackgroundColor(bgColor);
+            header.setBorder(Rectangle.NO_BORDER);
+            header.setPadding(8f);
+            table.getRow(0).getCells()[i] = header;
+        }
+    }
+
+    private void addDataCell(PdfPTable table, String value, boolean oddRow) {
+        Font rowFont = new Font(Font.HELVETICA, 9, Font.NORMAL, new Color(31, 41, 55));
+        PdfPCell cell = new PdfPCell(new Phrase(value != null ? value : "", rowFont));
+        cell.setPadding(7f);
+        cell.setBorder(Rectangle.BOTTOM);
+        cell.setBorderColor(new Color(229, 231, 235));
+        if (oddRow) {
+            cell.setBackgroundColor(new Color(249, 250, 251));
+        }
+        table.addCell(cell);
     }
 }
