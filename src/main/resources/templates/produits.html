@@ -48,8 +48,6 @@
       .main { margin-left:0; min-height:100vh; }
       .topbar { padding:12px 14px; }
       .topbar > * { min-width:0; }
-      .topbar > div:last-child { width:100%; display:flex; flex-wrap:wrap; gap:8px; }
-      .topbar > div:last-child .btn { flex:1 1 auto; }
     }
 
   </style>
@@ -57,7 +55,7 @@
 </head>
 <body>
 <div class="mobile-nav">
-  <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Ouvrir le menu" aria-expanded="false">
+  <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Ouvrir le menu" aria-controls="sidebarMenu" aria-expanded="false">
     <i class="bi bi-list fs-5"></i>
   </button>
   <div class="mobile-brand"><span class="mobile-brand-logo">◈</span> MicroBiz Pro</div>
@@ -352,23 +350,7 @@
   }, 5000);
 </script>
 
-<script>
-  (function () {
-    const toggle = document.getElementById('mobileNavToggle');
-    const overlay = document.getElementById('sidebarOverlay');
-    const sidebar = document.getElementById('sidebarMenu');
-    if (!toggle || !overlay || !sidebar) return;
 
-    const setOpen = (open) => {
-      document.body.classList.toggle('sidebar-open', open);
-      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    };
-
-    toggle.addEventListener('click', () => setOpen(!document.body.classList.contains('sidebar-open')));
-    overlay.addEventListener('click', () => setOpen(false));
-    sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setOpen(false)));
-    window.addEventListener('resize', () => { if (window.innerWidth > 992) setOpen(false); });
-  })();
-</script>
+<script th:src="@{/js/mobile-nav.js}"></script>
 </body>
 </html>
