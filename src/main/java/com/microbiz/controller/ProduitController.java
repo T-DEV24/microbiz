@@ -34,6 +34,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayOutputStream;
+import java.awt.Color;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 

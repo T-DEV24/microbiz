@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.awt.Color;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -36,15 +37,15 @@ public class RapportService {
             PdfWriter.getInstance(doc, baos);
             doc.open();
 
-            BaseColor bleu = new BaseColor(37, 99, 235);
-            BaseColor gris = new BaseColor(107, 114, 128);
-            BaseColor rouge = new BaseColor(220, 38, 38);
-            BaseColor vert = new BaseColor(5, 150, 105);
+            Color bleu = new Color(37, 99, 235);
+            Color gris = new Color(107, 114, 128);
+            Color rouge = new Color(220, 38, 38);
+            Color vert = new Color(5, 150, 105);
 
-            Font fTitre = new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD, bleu);
-            Font fSousTi = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.DARK_GRAY);
-            Font fNormal = new Font(Font.FontFamily.HELVETICA, 11, Font.NORMAL, BaseColor.DARK_GRAY);
-            Font fMuted = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, gris);
+            Font fTitre = new Font(Font.HELVETICA, 20, Font.BOLD, bleu);
+            Font fSousTi = new Font(Font.HELVETICA, 12, Font.BOLD, Color.DARK_GRAY);
+            Font fNormal = new Font(Font.HELVETICA, 11, Font.NORMAL, Color.DARK_GRAY);
+            Font fMuted = new Font(Font.HELVETICA, 10, Font.NORMAL, gris);
 
             Paragraph titre = new Paragraph("MicroBiz Pro — Rapport Financier", fTitre);
             titre.setAlignment(Element.ALIGN_CENTER);
@@ -95,7 +96,7 @@ public class RapportService {
 
             addKpiRow(tableKpi, "Marge bénéficiaire",
                     String.format("%.1f %%", marge),
-                    marge >= 40 ? vert : (marge >= 20 ? new BaseColor(217, 119, 6) : rouge),
+                    marge >= 40 ? vert : (marge >= 20 ? new Color(217, 119, 6) : rouge),
                     fNormal);
 
             doc.add(tableKpi);
@@ -183,13 +184,13 @@ public class RapportService {
     }
 
     private void addKpiRow(PdfPTable table, String label, String value,
-                           BaseColor valueColor, Font fNormal) {
+                           Color valueColor, Font fNormal) {
 
         PdfPCell c1 = new PdfPCell(new Phrase(label, fNormal));
         c1.setBorder(Rectangle.BOTTOM);
         c1.setPadding(8);
 
-        Font fVal = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD, valueColor);
+        Font fVal = new Font(Font.HELVETICA, 12, Font.BOLD, valueColor);
         PdfPCell c2 = new PdfPCell(new Phrase(value, fVal));
         c2.setBorder(Rectangle.BOTTOM);
         c2.setPadding(8);
@@ -199,8 +200,8 @@ public class RapportService {
         table.addCell(c2);
     }
 
-    private void addTableHeader(PdfPTable table, String[] headers, BaseColor bgColor) {
-        Font fh = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+    private void addTableHeader(PdfPTable table, String[] headers, Color bgColor) {
+        Font fh = new Font(Font.HELVETICA, 10, Font.BOLD, Color.WHITE);
 
         for (String h : headers) {
             PdfPCell cell = new PdfPCell(new Phrase(h, fh));
@@ -212,13 +213,13 @@ public class RapportService {
     }
 
     private void addTableRow(PdfPTable table, String[] values) {
-        Font fRow = new Font(Font.FontFamily.HELVETICA, 10);
+        Font fRow = new Font(Font.HELVETICA, 10);
 
         for (String v : values) {
             PdfPCell cell = new PdfPCell(new Phrase(v, fRow));
             cell.setPadding(7);
             cell.setBorder(Rectangle.BOTTOM);
-            cell.setBorderColor(new BaseColor(243, 244, 246));
+            cell.setBorderColor(new Color(243, 244, 246));
             table.addCell(cell);
         }
     }
