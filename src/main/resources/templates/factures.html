@@ -119,12 +119,15 @@
                         </td>
                         <td th:text="${f.dateEmission != null ? #temporals.format(f.dateEmission,'dd/MM/yyyy') : '—'}">—</td>
                         <td>
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                             <form th:action="@{/factures/{id}/statut(id=${f.id})}" method="post" style="display:flex;gap:8px;align-items:center">
                                 <select name="statut" class="form-control-dark" style="margin-bottom:0;padding:6px 8px;font-size:12px">
                                     <option th:each="s : ${statuts}" th:value="${s}" th:text="${s}" th:selected="${s == f.statut}"></option>
                                 </select>
                                 <button type="submit" class="action-btn btn-edit">MAJ</button>
                             </form>
+                            <a class="action-btn btn-edit" th:href="@{/factures/{id}/pdf(id=${f.id})}">PDF</a>
+                            </div>
                         </td>
                     </tr>
                     </tbody>

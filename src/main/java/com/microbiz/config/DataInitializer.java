@@ -43,8 +43,16 @@ public class DataInitializer implements CommandLineRunner {
                     .role("ROLE_USER")
                     .build();
             utilisateurRepo.save(user);
+            Utilisateur commercial = Utilisateur.builder()
+                    .nom("Awa Commercial")
+                    .email("commercial@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(userPassword))
+                    .role("ROLE_COMMERCIAL")
+                    .build();
+            utilisateurRepo.save(commercial);
             System.out.println("  ADMIN -> admin@microbiz.com / [mot de passe via variable d'environnement]");
             System.out.println("  USER  -> jean@microbiz.com  / [mot de passe via variable d'environnement]");
+            System.out.println("  COM   -> commercial@microbiz.com / [mot de passe via variable d'environnement]");
         }
         // Produits de demo
         if (produitRepo.count() == 0) {
