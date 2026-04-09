@@ -61,11 +61,6 @@ public class FactureService {
         return facture;
     }
 
-    public Facture findById(Long id) {
-        return factureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Facture introuvable"));
-    }
-
     public Page<Facture> search(String q,
                                 Facture.StatutFacture statut,
                                 LocalDate debut,

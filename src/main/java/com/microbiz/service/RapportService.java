@@ -1,6 +1,5 @@
 package com.microbiz.service;
 
-import com.lowagie.text.BaseColor;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;

@@ -2,7 +2,6 @@ package com.microbiz.controller;
 
 import com.microbiz.model.Produit;
 import com.microbiz.model.Depense;
-import com.lowagie.text.BaseColor;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
@@ -223,10 +222,10 @@ public class ProduitController {
             PdfWriter.getInstance(doc, baos);
             doc.open();
 
-            BaseColor primary = new BaseColor(37, 99, 235);
-            BaseColor muted = new BaseColor(107, 114, 128);
-            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, primary);
-            Font infoFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, muted);
+            Color primary = new Color(37, 99, 235);
+            Color muted = new Color(107, 114, 128);
+            Font titleFont = new Font(Font.HELVETICA, 16, Font.BOLD, primary);
+            Font infoFont = new Font(Font.HELVETICA, 10, Font.NORMAL, muted);
 
             Paragraph title = new Paragraph("MicroBiz Pro — Export Produits", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
@@ -308,8 +307,8 @@ public class ProduitController {
         return "\"" + escaped + "\"";
     }
 
-    private void styleHeaderRow(PdfPTable table, BaseColor bgColor) {
-        Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+    private void styleHeaderRow(PdfPTable table, Color bgColor) {
+        Font headerFont = new Font(Font.HELVETICA, 10, Font.BOLD, Color.WHITE);
         for (int i = 0; i < table.getNumberOfColumns(); i++) {
             PdfPCell old = table.getRow(0).getCells()[i];
             PdfPCell header = new PdfPCell(new Phrase(old.getPhrase().getContent(), headerFont));
@@ -321,13 +320,13 @@ public class ProduitController {
     }
 
     private void addDataCell(PdfPTable table, String value, boolean oddRow) {
-        Font rowFont = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, new BaseColor(31, 41, 55));
+        Font rowFont = new Font(Font.HELVETICA, 9, Font.NORMAL, new Color(31, 41, 55));
         PdfPCell cell = new PdfPCell(new Phrase(value != null ? value : "", rowFont));
         cell.setPadding(7f);
         cell.setBorder(Rectangle.BOTTOM);
-        cell.setBorderColor(new BaseColor(229, 231, 235));
+        cell.setBorderColor(new Color(229, 231, 235));
         if (oddRow) {
-            cell.setBackgroundColor(new BaseColor(249, 250, 251));
+            cell.setBackgroundColor(new Color(249, 250, 251));
         }
         table.addCell(cell);
     }
