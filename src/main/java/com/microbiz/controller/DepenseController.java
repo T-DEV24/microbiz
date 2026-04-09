@@ -61,6 +61,7 @@ public class DepenseController {
         model.addAttribute("totalFiltre",   totalFiltre);
         model.addAttribute("devises", List.of("XAF", "EUR", "USD", "GNF"));
         model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
+        model.addAttribute("ratesToBase", currencyRateService.getRatesToBase());
         return "depenses";
     }
 
