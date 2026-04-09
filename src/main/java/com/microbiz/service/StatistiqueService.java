@@ -14,21 +14,29 @@ public class StatistiqueService {
 
     @Autowired private VenteRepository   venteRepository;
     @Autowired private DepenseRepository depenseRepository;
+    @Autowired private VenteService venteService;
+    @Autowired private DepenseService depenseService;
+    @Autowired private CurrencyRateService currencyRateService;
 
     public Double getChiffreAffairesTotal() {
-        Double ca = venteRepository.calculerCATotal();
-        return ca != null ? ca : 0.0;
+        return venteService.findAll().stream()
+                .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
+                .sum();
     }
 
     public Double getChiffreAffairesDuMois() {
-        Double ca = venteRepository.calculerCADuMois(
-                LocalDate.now().getMonthValue(), LocalDate.now().getYear());
-        return ca != null ? ca : 0.0;
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
+        return venteService.findAll().stream()
+                .filter(v -> v.getDateVente() != null && v.getDateVente().getMonthValue() == month && v.getDateVente().getYear() == year)
+                .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
+                .sum();
     }
 
     public Double getChiffreAffairesParPeriode(LocalDate debut, LocalDate fin) {
-        Double ca = venteRepository.calculerCAParPeriode(debut, fin);
-        return ca != null ? ca : 0.0;
+        return venteService.getVentesParPeriode(debut, fin).stream()
+                .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
+                .sum();
     }
 
     public Double getBeneficeNet() {
@@ -36,13 +44,11 @@ public class StatistiqueService {
     }
 
     public Double getTotalDepenses() {
-        Double d = depenseRepository.calculerTotal();
-        return d != null ? d : 0.0;
+        return depenseService.getTotalDepenses();
     }
 
     public Double getTotalDepensesParPeriode(LocalDate debut, LocalDate fin) {
-        Double d = depenseRepository.calculerTotalParPeriode(debut, fin);
-        return d != null ? d : 0.0;
+        return depenseService.getTotalParPeriode(debut, fin);
     }
 
     public Double getMargeBeneficiaire() {
@@ -106,7 +112,7 @@ public class StatistiqueService {
                 String[] mois = {"Jan","Fev","Mar","Avr","Mai","Jun","Jul","Aou","Sep","Oct","Nov","Dec"};
                 key = mois[d.getMonthValue() - 1] + " " + d.getYear();
             }
-            result.put(key, result.getOrDefault(key, 0.0) + vente.getMontantTotal());
+            result.put(key, result.getOrDefault(key, 0.0) + currencyRateService.toBase(vente.getMontantTotal(), vente.getDevise()));
         }
         return result;
     }

@@ -26,6 +26,10 @@ public class Vente {
     @NotNull  @DecimalMin("0.0")
     @Column(name = "prix_unitaire")
     private Double prixUnitaire;
+    @Column(length = 8, nullable = false)
+    private String devise = "XAF";
+    @Column(name = "tenant_key", nullable = false)
+    private String tenantKey = "default";
     @Column(name = "date_vente")
     private LocalDate dateVente;
     // Remplit automatiquement la date a la creation

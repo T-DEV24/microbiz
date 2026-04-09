@@ -2,10 +2,21 @@ package com.microbiz.controller;
 
 import com.microbiz.model.*;
 import com.microbiz.service.*;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.microbiz.security.TenantContext;
+import com.lowagie.text.BaseColor;
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +43,7 @@ public class VenteController {
     @Autowired private ProduitService produitService;
     @Autowired private ClientService  clientService;
     @Autowired private AuditLogService auditLogService;
+    @Autowired private CurrencyRateService currencyRateService;
 
     @GetMapping
     public String liste(
@@ -94,6 +106,8 @@ public class VenteController {
         model.addAttribute("sort", sortField);
         model.addAttribute("dir", direction.name().toLowerCase());
         model.addAttribute("size", pageable.getPageSize());
+        model.addAttribute("devises", List.of("XAF", "EUR", "USD", "GNF"));
+        model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
         return "ventes";
     }
 
@@ -103,6 +117,7 @@ public class VenteController {
             @RequestParam(required = false) Long clientId,
             @RequestParam Integer quantite,
             @RequestParam Double  prixUnitaire,
+            @RequestParam(defaultValue = "XAF") String devise,
             RedirectAttributes ra) {
 
         try {
@@ -121,6 +136,8 @@ public class VenteController {
             vente.setProduit(produit);
             vente.setQuantite(quantite);
             vente.setPrixUnitaire(prixUnitaire);
+            vente.setDevise((devise == null || devise.isBlank()) ? "XAF" : devise.toUpperCase(Locale.ROOT));
+            vente.setTenantKey(TenantContext.getTenant());
             if (clientId != null)
                 vente.setClient(clientService.findById(clientId).orElse(null));
 
@@ -164,7 +181,7 @@ public class VenteController {
         String sortField = resolveSortField(sort);
         Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 1000, Sort.by(direction, sortField)));
 
-        StringBuilder csv = new StringBuilder("id,date,produit,client,quantite,prix_unitaire,montant\n");
+        StringBuilder csv = new StringBuilder("id,date,produit,client,quantite,prix_unitaire,devise,montant\n");
         for (Vente v : ventes.getContent()) {
             csv.append(v.getId()).append(",")
                     .append(v.getDateVente()).append(",")
@@ -172,6 +189,7 @@ public class VenteController {
                     .append(escape(v.getClient() != null ? v.getClient().getNom() : "Anonyme")).append(",")
                     .append(v.getQuantite()).append(",")
                     .append(v.getPrixUnitaire()).append(",")
+                    .append(v.getDevise() != null ? v.getDevise() : "XAF").append(",")
                     .append(v.getMontantTotal())
                     .append("\n");
         }
@@ -194,22 +212,46 @@ public class VenteController {
             Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 500, Sort.by(direction, sortField)));
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Document doc = new Document();
+            Document doc = new Document(PageSize.A4.rotate(), 36, 36, 42, 36);
             PdfWriter.getInstance(doc, baos);
             doc.open();
-            doc.add(new Paragraph("Export ventes - " + LocalDate.now()));
-            PdfPTable table = new PdfPTable(5);
+
+            BaseColor primary = new BaseColor(37, 99, 235);
+            BaseColor muted = new BaseColor(107, 114, 128);
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, primary);
+            Font infoFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, muted);
+
+            Paragraph title = new Paragraph("MicroBiz Pro — Export Ventes", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(4f);
+            doc.add(title);
+
+            String filtreDate = (debut != null && fin != null) ? " • Période : " + debut + " au " + fin : "";
+            Paragraph info = new Paragraph("Généré le " + LocalDate.now() + " • " + ventes.getTotalElements() + " vente(s)" + filtreDate, infoFont);
+            info.setAlignment(Element.ALIGN_CENTER);
+            info.setSpacingAfter(16f);
+            doc.add(info);
+
+            PdfPTable table = new PdfPTable(6);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{1.2f, 2.1f, 2f, 0.7f, 0.8f, 1f});
             table.addCell("Date");
             table.addCell("Produit");
             table.addCell("Client");
             table.addCell("Qté");
+            table.addCell("Devise");
             table.addCell("Montant");
+            styleHeaderRow(table, primary);
+
+            boolean odd = false;
             for (Vente v : ventes.getContent()) {
-                table.addCell(v.getDateVente() != null ? v.getDateVente().toString() : "");
-                table.addCell(v.getProduit() != null ? v.getProduit().getNom() : "");
-                table.addCell(v.getClient() != null ? v.getClient().getNom() : "Anonyme");
-                table.addCell(String.valueOf(v.getQuantite()));
-                table.addCell(String.format("%.2f", v.getMontantTotal()));
+                addDataCell(table, v.getDateVente() != null ? v.getDateVente().toString() : "", odd);
+                addDataCell(table, v.getProduit() != null ? v.getProduit().getNom() : "", odd);
+                addDataCell(table, v.getClient() != null ? v.getClient().getNom() : "Anonyme", odd);
+                addDataCell(table, String.valueOf(v.getQuantite()), odd);
+                addDataCell(table, v.getDevise() != null ? v.getDevise() : "XAF", odd);
+                addDataCell(table, String.format(Locale.FRANCE, "%,.2f", v.getMontantTotal()).replace(',', ' '), odd);
+                odd = !odd;
             }
             doc.add(table);
             doc.close();
@@ -224,6 +266,47 @@ public class VenteController {
         }
     }
 
+    @GetMapping("/export.xlsx")
+    public ResponseEntity<byte[]> exportXlsx(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate debut,
+                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin,
+                                             @RequestParam(required = false) String q,
+                                             @RequestParam(defaultValue = "dateVente") String sort,
+                                             @RequestParam(defaultValue = "desc") String dir) {
+        Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String sortField = resolveSortField(sort);
+        Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 2000, Sort.by(direction, sortField)));
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("Ventes");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Date");
+            header.createCell(1).setCellValue("Produit");
+            header.createCell(2).setCellValue("Client");
+            header.createCell(3).setCellValue("Quantité");
+            header.createCell(4).setCellValue("Devise");
+            header.createCell(5).setCellValue("Montant");
+
+            int i = 1;
+            for (Vente v : ventes.getContent()) {
+                Row row = sheet.createRow(i++);
+                row.createCell(0).setCellValue(v.getDateVente() != null ? v.getDateVente().toString() : "");
+                row.createCell(1).setCellValue(v.getProduit() != null ? v.getProduit().getNom() : "");
+                row.createCell(2).setCellValue(v.getClient() != null ? v.getClient().getNom() : "Anonyme");
+                row.createCell(3).setCellValue(v.getQuantite() != null ? v.getQuantite() : 0);
+                row.createCell(4).setCellValue(v.getDevise() != null ? v.getDevise() : "XAF");
+                row.createCell(5).setCellValue(v.getMontantTotal());
+            }
+            for (int c = 0; c < 6; c++) sheet.autoSizeColumn(c);
+            workbook.write(baos);
+            auditLogService.log("EXPORT_XLSX", "VENTE", null, "Export ventes filtrées");
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ventes-" + LocalDate.now() + ".xlsx")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(baos.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur export XLSX ventes", e);
+        }
+    }
+
     private String escape(String value) {
         if (value == null) return "";
         String escaped = value.replace("\"", "\"\"");
@@ -233,5 +316,29 @@ public class VenteController {
     private String resolveSortField(String sort) {
         List<String> allowedSorts = List.of("dateVente", "prixUnitaire", "quantite", "id");
         return allowedSorts.contains(sort) ? sort : "dateVente";
+    }
+
+    private void styleHeaderRow(PdfPTable table, BaseColor bgColor) {
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+        for (int i = 0; i < table.getNumberOfColumns(); i++) {
+            PdfPCell old = table.getRow(0).getCells()[i];
+            PdfPCell header = new PdfPCell(new Phrase(old.getPhrase().getContent(), headerFont));
+            header.setBackgroundColor(bgColor);
+            header.setBorder(Rectangle.NO_BORDER);
+            header.setPadding(8f);
+            table.getRow(0).getCells()[i] = header;
+        }
+    }
+
+    private void addDataCell(PdfPTable table, String value, boolean oddRow) {
+        Font rowFont = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, new BaseColor(31, 41, 55));
+        PdfPCell cell = new PdfPCell(new Phrase(value != null ? value : "", rowFont));
+        cell.setPadding(7f);
+        cell.setBorder(Rectangle.BOTTOM);
+        cell.setBorderColor(new BaseColor(229, 231, 235));
+        if (oddRow) {
+            cell.setBackgroundColor(new BaseColor(249, 250, 251));
+        }
+        table.addCell(cell);
     }
 }

@@ -21,6 +21,10 @@ public class Depense {
     @NotNull(message = "Le montant est obligatoire")
     @DecimalMin(value = "0.0")
     private Double montant;
+    @Column(length = 8, nullable = false)
+    private String devise = "XAF";
+    @Column(name = "tenant_key", nullable = false)
+    private String tenantKey = "default";
     @Column(name = "date_depense")
     private LocalDate dateDepense;
     // Remplit automatiquement la date a la creation
