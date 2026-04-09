@@ -21,10 +21,12 @@ public class AuditLogController {
     public String index(@RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "20") int size,
                         Model model) {
+        int sizeSafe = Math.min(Math.max(5, size), 100);
         var logsPage = auditLogService.findAll(
-                PageRequest.of(Math.max(0, page), Math.min(Math.max(5, size), 100), Sort.by(Sort.Direction.DESC, "createdAt")));
+                PageRequest.of(Math.max(0, page), sizeSafe, Sort.by(Sort.Direction.DESC, "createdAt")));
         model.addAttribute("logsPage", logsPage);
         model.addAttribute("logs", logsPage.getContent());
+        model.addAttribute("size", sizeSafe);
         return "audit-logs";
     }
 }
