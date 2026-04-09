@@ -123,3 +123,11 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
   .grid-2 { grid-template-columns: 1fr; }
   .metrics-row { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 992px) {
+  .card table,
+  .card-section table,
+  table.table {
+    min-width: 720px;
+  }
+}

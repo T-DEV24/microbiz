@@ -108,6 +108,7 @@ public class VenteController {
         model.addAttribute("size", pageable.getPageSize());
         model.addAttribute("devises", List.of("XAF", "EUR", "USD", "GNF"));
         model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
+        model.addAttribute("ratesToBase", currencyRateService.getRatesToBase());
         return "ventes";
     }
 
@@ -145,11 +146,11 @@ public class VenteController {
             auditLogService.log("CREATE", "VENTE", saved.getId(), "Enregistrement vente");
 
             int stockRestant = stockActuel - quantite;
-            long total = (long)(quantite * prixUnitaire);
+            double total = quantite * prixUnitaire;
             ra.addFlashAttribute("succes",
                     "Vente enregistrée — " + quantite + " × « " + produit.getNom()
-                            + " » = " + String.format("%,d", total).replace(',', ' ')
-                            + " FCFA. Stock restant : " + stockRestant + " unité(s).");
+                            + " » = " + String.format("%,.2f", total).replace(',', ' ')
+                            + " " + vente.getDevise() + ". Stock restant : " + stockRestant + " unité(s).");
 
         } catch (RuntimeException e) {
             ra.addFlashAttribute("erreur", e.getMessage());
