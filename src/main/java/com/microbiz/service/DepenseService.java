@@ -25,7 +25,15 @@ public class DepenseService {
 
     public Optional<Depense> findById(Long id) { return depenseRepository.findById(id); }
 
-    public Depense save(Depense d) { return depenseRepository.save(d); }
+    public Depense save(Depense d) {
+        if (d.getDevise() == null || d.getDevise().isBlank()) {
+            d.setDevise("XAF");
+        }
+        if (d.getTenantKey() == null || d.getTenantKey().isBlank()) {
+            d.setTenantKey(TenantContext.getTenant());
+        }
+        return depenseRepository.save(d);
+    }
 
     public void deleteById(Long id) { depenseRepository.deleteById(id); }
 
