@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" th:fragment="page">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -76,6 +76,12 @@
         }
         .demo-chip:hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.15); color:rgba(255,255,255,.7); }
         .demo-chip strong { display:block; color:rgba(255,255,255,.6); font-size:11px; margin-bottom:2px; }
+        @media (max-width: 576px) {
+            body { align-items:flex-start; padding:16px 10px; }
+            .login-card { padding:28px 18px; border-radius:14px; }
+            .login-card .d-flex.gap-2 { flex-direction:column; }
+            .demo-chip { width:100%; }
+        }
     </style>
   <link th:href="@{/css/style.css}" rel="stylesheet">
 </head>
