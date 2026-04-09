@@ -2,6 +2,7 @@ package com.microbiz.controller;
 
 import com.microbiz.model.Facture;
 import com.microbiz.model.FactureLigne;
+import com.microbiz.service.CurrencyRateService;
 import com.microbiz.service.FactureService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import java.time.LocalDate;
 public class FactureController {
 
     @Autowired private FactureService factureService;
+    @Autowired private CurrencyRateService currencyRateService;
 
     @GetMapping
     public String index(@RequestParam(defaultValue = "0") int page,
@@ -48,6 +50,8 @@ public class FactureController {
         model.addAttribute("debut", debut);
         model.addAttribute("fin", fin);
         model.addAttribute("size", pageable.getPageSize());
+        model.addAttribute("devises", java.util.List.of("XAF", "EUR", "USD", "GNF"));
+        model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
         return "factures";
     }
 

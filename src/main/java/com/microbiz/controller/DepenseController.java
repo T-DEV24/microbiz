@@ -1,6 +1,7 @@
 package com.microbiz.controller;
 
 import com.microbiz.model.Depense;
+import com.microbiz.security.TenantContext;
 import com.microbiz.service.DepenseService;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -24,6 +25,7 @@ import java.util.List;
 public class DepenseController {
 
     @Autowired private DepenseService depenseService;
+    @Autowired private CurrencyRateService currencyRateService;
 
     @GetMapping
     public String liste(
@@ -57,6 +59,8 @@ public class DepenseController {
         model.addAttribute("depensesMois",  depenseService.getDepensesDuMois());
         model.addAttribute("parCategorie",  depenseService.getDepensesParCategorie());
         model.addAttribute("totalFiltre",   totalFiltre);
+        model.addAttribute("devises", List.of("XAF", "EUR", "USD", "GNF"));
+        model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
         return "depenses";
     }
 
@@ -66,6 +70,10 @@ public class DepenseController {
             ra.addFlashAttribute("erreur", "Le montant doit être positif.");
             return "redirect:/depenses";
         }
+        if (depense.getDevise() == null || depense.getDevise().isBlank()) {
+            depense.setDevise("XAF");
+        }
+        depense.setTenantKey(TenantContext.getTenant());
         depenseService.save(depense);
         ra.addFlashAttribute("succes",
                 "Dépense de "
@@ -94,16 +102,18 @@ public class DepenseController {
             header.createCell(0).setCellValue("Date");
             header.createCell(1).setCellValue("Description");
             header.createCell(2).setCellValue("Catégorie");
-            header.createCell(3).setCellValue("Montant");
+            header.createCell(3).setCellValue("Devise");
+            header.createCell(4).setCellValue("Montant");
             int i = 1;
             for (Depense d : depenses) {
                 Row row = sheet.createRow(i++);
                 row.createCell(0).setCellValue(d.getDateDepense() != null ? d.getDateDepense().toString() : "");
                 row.createCell(1).setCellValue(d.getDescription() != null ? d.getDescription() : "");
                 row.createCell(2).setCellValue(d.getCategorie() != null ? d.getCategorie() : "");
-                row.createCell(3).setCellValue(d.getMontant() != null ? d.getMontant() : 0);
+                row.createCell(3).setCellValue(d.getDevise() != null ? d.getDevise() : "XAF");
+                row.createCell(4).setCellValue(d.getMontant() != null ? d.getMontant() : 0);
             }
-            for (int c = 0; c < 4; c++) sheet.autoSizeColumn(c);
+            for (int c = 0; c < 5; c++) sheet.autoSizeColumn(c);
             workbook.write(baos);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=depenses-" + LocalDate.now() + ".xlsx")

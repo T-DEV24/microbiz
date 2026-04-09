@@ -163,15 +163,21 @@
               </div>
 
               <div class="row g-2 mb-3">
-                <div class="col-6">
+                <div class="col-4">
                   <label class="form-label form-label-sm fw-medium">Quantité <span class="text-danger">*</span></label>
                   <input type="number" class="form-control form-control-sm" name="quantite"
                          id="qteInput" value="1" min="1" required oninput="calcTotal()">
                 </div>
-                <div class="col-6">
+                <div class="col-4">
                   <label class="form-label form-label-sm fw-medium">Prix unitaire (FCFA) <span class="text-danger">*</span></label>
                   <input type="number" class="form-control form-control-sm" name="prixUnitaire"
                          id="prixInput" placeholder="Auto" step="0.01" required oninput="calcTotal()">
+                </div>
+                <div class="col-4">
+                  <label class="form-label form-label-sm fw-medium">Devise</label>
+                  <select class="form-select form-select-sm" name="devise">
+                    <option th:each="d : ${devises}" th:value="${d}" th:text="${d}" th:selected="${d == devisePrincipale}"></option>
+                  </select>
                 </div>
               </div>
 
@@ -240,7 +246,7 @@
               <i class="bi bi-funnel-fill flex-shrink-0"></i>
               Résultats filtrés —
               <strong th:text="${#lists.size(ventes)} + ' ventes'"></strong> —
-              Total : <strong th:text="${#numbers.formatDecimal(caFiltre,0,'COMMA',0,'POINT')} + ' FCFA'"></strong>
+              Total consolidé : <strong th:text="${#numbers.formatDecimal(caFiltre,0,'COMMA',0,'POINT')} + ' ' + ${devisePrincipale}"></strong>
             </div>
           </div>
 
@@ -272,7 +278,7 @@
                         th:text="${v.quantite}">0</span>
               </td>
               <td style="font-family:'DM Mono',monospace;font-size:12px;color:#059669;font-weight:600"
-                  th:text="${#numbers.formatDecimal(v.getMontantTotal(),0,'COMMA',0,'POINT')} + ' F'">0 F</td>
+                  th:text="${#numbers.formatDecimal(v.getMontantTotal(),0,'COMMA',0,'POINT')} + ' ' + ${v.devise}">0 F</td>
               <td>
                 <!-- AMÉLIORATION 2 : message indique que le stock est restauré -->
                 <form th:action="@{/ventes/supprimer/{id}(id=${v.id})}" method="post" style="display:inline">

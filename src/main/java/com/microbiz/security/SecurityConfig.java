@@ -22,6 +22,8 @@ public class SecurityConfig {
     private CustomUserDetailsService userDetailsService;
     @Autowired
     private LoginRateLimitFilter loginRateLimitFilter;
+    @Autowired
+    private TenantFilter tenantFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -60,7 +62,7 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
                         // Routes ADMIN uniquement
-                        .requestMatchers("/utilisateurs/**", "/audit-logs/**").hasRole("ADMIN")
+                        .requestMatchers("/utilisateurs/**", "/audit-logs/**", "/saas/admin/**").hasRole("ADMIN")
                         // ROLE_COMMERCIAL : accès complet ventes/clients
                         .requestMatchers("/ventes/**", "/clients/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
                         // ROLE_COMMERCIAL : pas d'accès aux dépenses
@@ -79,6 +81,7 @@ public class SecurityConfig {
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )
+                .addFilterBefore(tenantFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout(logout -> logout
                         .logoutUrl("/logout")

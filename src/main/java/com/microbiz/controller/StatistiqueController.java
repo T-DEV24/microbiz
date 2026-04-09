@@ -6,6 +6,7 @@ import com.microbiz.service.ProduitService;
 import com.microbiz.service.RapportService;
 import com.microbiz.service.StatistiqueService;
 import com.microbiz.service.VenteService;
+import com.microbiz.service.PredictiveSalesService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -33,6 +34,7 @@ public class StatistiqueController {
     @Autowired private ProduitService produitService;
     @Autowired private ClientService clientService;
     @Autowired private RapportService rapportService;
+    @Autowired private PredictiveSalesService predictiveSalesService;
 
     @GetMapping
     public String statistiques(@RequestParam(defaultValue = "mois") String periode,
@@ -90,6 +92,7 @@ public class StatistiqueController {
         model.addAttribute("top", topN);
         model.addAttribute("debut", debut);
         model.addAttribute("fin", fin);
+        model.addAttribute("previsionsVentes", predictiveSalesService.previsionMensuelle(3));
 
         if (debut != null && fin != null) {
             LocalDate previousEnd = debut.minusDays(1);
@@ -109,6 +112,12 @@ public class StatistiqueController {
         }
 
         return "statistiques";
+    }
+
+    @GetMapping("/previsions")
+    public ResponseEntity<Map<String, Double>> previsions(@RequestParam(defaultValue = "3") int mois) {
+        int horizon = Math.min(Math.max(mois, 1), 12);
+        return ResponseEntity.ok(predictiveSalesService.previsionMensuelle(horizon));
     }
 
     @GetMapping("/export.csv")

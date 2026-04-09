@@ -2,6 +2,7 @@ package com.microbiz.controller;
 
 import com.microbiz.model.*;
 import com.microbiz.service.*;
+import com.microbiz.security.TenantContext;
 import com.lowagie.text.BaseColor;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
@@ -42,6 +43,7 @@ public class VenteController {
     @Autowired private ProduitService produitService;
     @Autowired private ClientService  clientService;
     @Autowired private AuditLogService auditLogService;
+    @Autowired private CurrencyRateService currencyRateService;
 
     @GetMapping
     public String liste(
@@ -104,6 +106,8 @@ public class VenteController {
         model.addAttribute("sort", sortField);
         model.addAttribute("dir", direction.name().toLowerCase());
         model.addAttribute("size", pageable.getPageSize());
+        model.addAttribute("devises", List.of("XAF", "EUR", "USD", "GNF"));
+        model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
         return "ventes";
     }
 
@@ -113,6 +117,7 @@ public class VenteController {
             @RequestParam(required = false) Long clientId,
             @RequestParam Integer quantite,
             @RequestParam Double  prixUnitaire,
+            @RequestParam(defaultValue = "XAF") String devise,
             RedirectAttributes ra) {
 
         try {
@@ -131,6 +136,8 @@ public class VenteController {
             vente.setProduit(produit);
             vente.setQuantite(quantite);
             vente.setPrixUnitaire(prixUnitaire);
+            vente.setDevise((devise == null || devise.isBlank()) ? "XAF" : devise.toUpperCase(Locale.ROOT));
+            vente.setTenantKey(TenantContext.getTenant());
             if (clientId != null)
                 vente.setClient(clientService.findById(clientId).orElse(null));
 
@@ -174,7 +181,7 @@ public class VenteController {
         String sortField = resolveSortField(sort);
         Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 1000, Sort.by(direction, sortField)));
 
-        StringBuilder csv = new StringBuilder("id,date,produit,client,quantite,prix_unitaire,montant\n");
+        StringBuilder csv = new StringBuilder("id,date,produit,client,quantite,prix_unitaire,devise,montant\n");
         for (Vente v : ventes.getContent()) {
             csv.append(v.getId()).append(",")
                     .append(v.getDateVente()).append(",")
@@ -182,6 +189,7 @@ public class VenteController {
                     .append(escape(v.getClient() != null ? v.getClient().getNom() : "Anonyme")).append(",")
                     .append(v.getQuantite()).append(",")
                     .append(v.getPrixUnitaire()).append(",")
+                    .append(v.getDevise() != null ? v.getDevise() : "XAF").append(",")
                     .append(v.getMontantTotal())
                     .append("\n");
         }
@@ -224,13 +232,14 @@ public class VenteController {
             info.setSpacingAfter(16f);
             doc.add(info);
 
-            PdfPTable table = new PdfPTable(5);
+            PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{1.2f, 2.3f, 2.1f, 0.8f, 1.1f});
+            table.setWidths(new float[]{1.2f, 2.1f, 2f, 0.7f, 0.8f, 1f});
             table.addCell("Date");
             table.addCell("Produit");
             table.addCell("Client");
             table.addCell("Qté");
+            table.addCell("Devise");
             table.addCell("Montant");
             styleHeaderRow(table, primary);
 
@@ -240,6 +249,7 @@ public class VenteController {
                 addDataCell(table, v.getProduit() != null ? v.getProduit().getNom() : "", odd);
                 addDataCell(table, v.getClient() != null ? v.getClient().getNom() : "Anonyme", odd);
                 addDataCell(table, String.valueOf(v.getQuantite()), odd);
+                addDataCell(table, v.getDevise() != null ? v.getDevise() : "XAF", odd);
                 addDataCell(table, String.format(Locale.FRANCE, "%,.2f", v.getMontantTotal()).replace(',', ' '), odd);
                 odd = !odd;
             }
@@ -272,7 +282,8 @@ public class VenteController {
             header.createCell(1).setCellValue("Produit");
             header.createCell(2).setCellValue("Client");
             header.createCell(3).setCellValue("Quantité");
-            header.createCell(4).setCellValue("Montant");
+            header.createCell(4).setCellValue("Devise");
+            header.createCell(5).setCellValue("Montant");
 
             int i = 1;
             for (Vente v : ventes.getContent()) {
@@ -281,9 +292,10 @@ public class VenteController {
                 row.createCell(1).setCellValue(v.getProduit() != null ? v.getProduit().getNom() : "");
                 row.createCell(2).setCellValue(v.getClient() != null ? v.getClient().getNom() : "Anonyme");
                 row.createCell(3).setCellValue(v.getQuantite() != null ? v.getQuantite() : 0);
-                row.createCell(4).setCellValue(v.getMontantTotal());
+                row.createCell(4).setCellValue(v.getDevise() != null ? v.getDevise() : "XAF");
+                row.createCell(5).setCellValue(v.getMontantTotal());
             }
-            for (int c = 0; c < 5; c++) sheet.autoSizeColumn(c);
+            for (int c = 0; c < 6; c++) sheet.autoSizeColumn(c);
             workbook.write(baos);
             auditLogService.log("EXPORT_XLSX", "VENTE", null, "Export ventes filtrées");
             return ResponseEntity.ok()

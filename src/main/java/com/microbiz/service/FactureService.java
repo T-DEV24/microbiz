@@ -3,6 +3,7 @@ package com.microbiz.service;
 import com.microbiz.model.Facture;
 import com.microbiz.model.FactureLigne;
 import com.microbiz.model.EntrepriseSettings;
+import com.microbiz.security.TenantContext;
 import com.lowagie.text.Font;
 import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
@@ -12,6 +13,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import com.microbiz.repository.FactureRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +47,18 @@ public class FactureService {
     }
 
     public List<Facture> findAll() {
-        return factureRepository.findAll();
+        String tenant = TenantContext.getTenant();
+        return factureRepository.findAll().stream().filter(f -> tenant.equals(f.getTenantKey())).toList();
+    }
+
+    public Facture findById(Long id) {
+        String tenant = TenantContext.getTenant();
+        Facture facture = factureRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Facture introuvable"));
+        if (!tenant.equals(facture.getTenantKey())) {
+            throw new RuntimeException("Facture introuvable");
+        }
+        return facture;
     }
 
     public Facture findById(Long id) {
@@ -58,7 +71,10 @@ public class FactureService {
                                 LocalDate debut,
                                 LocalDate fin,
                                 Pageable pageable) {
-        return factureRepository.search(q, statut, debut, fin, pageable);
+        String tenant = TenantContext.getTenant();
+        Page<Facture> page = factureRepository.search(q, statut, debut, fin, pageable);
+        List<Facture> filtered = page.getContent().stream().filter(f -> tenant.equals(f.getTenantKey())).toList();
+        return new PageImpl<>(filtered, pageable, filtered.size());
     }
 
     public Facture create(Facture facture) {
@@ -71,6 +87,10 @@ public class FactureService {
         if (facture.getStatut() == null) {
             facture.setStatut(Facture.StatutFacture.BROUILLON);
         }
+        if (facture.getDevise() == null || facture.getDevise().isBlank()) {
+            facture.setDevise("XAF");
+        }
+        facture.setTenantKey(TenantContext.getTenant());
         recalculerMontant(facture);
         return factureRepository.save(facture);
     }
@@ -160,6 +180,7 @@ public class FactureService {
             doc.add(new Paragraph("Client: " + facture.getClientNom()));
             doc.add(new Paragraph("Date émission: " + facture.getDateEmission()));
             doc.add(new Paragraph("Échéance: " + (facture.getDateEcheance() != null ? facture.getDateEcheance() : "—")));
+            doc.add(new Paragraph("Devise: " + (facture.getDevise() != null ? facture.getDevise() : "XAF")));
             doc.add(new Paragraph(" "));
 
             PdfPTable table = new PdfPTable(4);
@@ -175,7 +196,7 @@ public class FactureService {
                 table.addCell(String.format("%,.0f", l.getTotalLigne()).replace(',', ' '));
             }
             doc.add(table);
-            doc.add(new Paragraph("Montant TTC: " + String.format("%,.0f F", facture.getMontantTtc()).replace(',', ' ')));
+            doc.add(new Paragraph("Montant TTC: " + String.format("%,.0f", facture.getMontantTtc()).replace(',', ' ') + " " + facture.getDevise()));
             if (settings.getMentionsLegales() != null && !settings.getMentionsLegales().isBlank()) {
                 doc.add(new Paragraph(" "));
                 doc.add(new Paragraph("Mentions légales: " + settings.getMentionsLegales()));
