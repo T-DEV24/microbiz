@@ -14,6 +14,7 @@ public class StockAlerteService {
 
     @Autowired private ProduitService produitService;
     @Autowired private WebhookService webhookService;
+    @Autowired private EmailNotificationService emailNotificationService;
 
     public List<Produit> getProduitsEnAlerte() {
         return produitService.getProduitsStockBas();
@@ -35,5 +36,6 @@ public class StockAlerteService {
         )).toList());
 
         webhookService.publish("stock.low", payload);
+        emailNotificationService.sendStockBas(alertes);
     }
 }

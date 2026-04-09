@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface FactureRepository extends JpaRepository<Facture, Long> {
@@ -27,4 +28,6 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
                          @Param("debut") LocalDate debut,
                          @Param("fin") LocalDate fin,
                          Pageable pageable);
+
+    List<Facture> findByStatutAndDateEcheanceBefore(Facture.StatutFacture statut, LocalDate date);
 }

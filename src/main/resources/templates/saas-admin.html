@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="fragments/dashboard-layout :: layout(~{::content}, 'SaaS Admin', 'Multi-tenant & abonnements', 'saas-admin')">
+<div th:fragment="content">
+    <div class="container-fluid p-4">
+        <h2 class="mb-3">Administration SaaS (phase 1)</h2>
+        <div class="alert alert-info">Isolation tenant active via <code>X-Tenant-Key</code>. Plans disponibles : Free / Pro / Business.</div>
+        <div class="row g-3">
+            <div class="col-md-4" th:each="plan : ${plans}">
+                <div class="card p-3 shadow-sm">
+                    <h5 th:text="${plan}"></h5>
+                    <p class="text-muted mb-0">Facturation mensuelle en <span th:text="${baseCurrency}">XAF</span> (préparation architecture).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>
