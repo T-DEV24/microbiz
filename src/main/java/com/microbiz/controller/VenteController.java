@@ -2,8 +2,15 @@ package com.microbiz.controller;
 
 import com.microbiz.model.*;
 import com.microbiz.service.*;
+import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -194,22 +201,44 @@ public class VenteController {
             Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 500, Sort.by(direction, sortField)));
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Document doc = new Document();
+            Document doc = new Document(PageSize.A4.rotate(), 36, 36, 42, 36);
             PdfWriter.getInstance(doc, baos);
             doc.open();
-            doc.add(new Paragraph("Export ventes - " + LocalDate.now()));
+
+            BaseColor primary = new BaseColor(37, 99, 235);
+            BaseColor muted = new BaseColor(107, 114, 128);
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, primary);
+            Font infoFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, muted);
+
+            Paragraph title = new Paragraph("MicroBiz Pro — Export Ventes", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(4f);
+            doc.add(title);
+
+            String filtreDate = (debut != null && fin != null) ? " • Période : " + debut + " au " + fin : "";
+            Paragraph info = new Paragraph("Généré le " + LocalDate.now() + " • " + ventes.getTotalElements() + " vente(s)" + filtreDate, infoFont);
+            info.setAlignment(Element.ALIGN_CENTER);
+            info.setSpacingAfter(16f);
+            doc.add(info);
+
             PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{1.2f, 2.3f, 2.1f, 0.8f, 1.1f});
             table.addCell("Date");
             table.addCell("Produit");
             table.addCell("Client");
             table.addCell("Qté");
             table.addCell("Montant");
+            styleHeaderRow(table, primary);
+
+            boolean odd = false;
             for (Vente v : ventes.getContent()) {
-                table.addCell(v.getDateVente() != null ? v.getDateVente().toString() : "");
-                table.addCell(v.getProduit() != null ? v.getProduit().getNom() : "");
-                table.addCell(v.getClient() != null ? v.getClient().getNom() : "Anonyme");
-                table.addCell(String.valueOf(v.getQuantite()));
-                table.addCell(String.format("%.2f", v.getMontantTotal()));
+                addDataCell(table, v.getDateVente() != null ? v.getDateVente().toString() : "", odd);
+                addDataCell(table, v.getProduit() != null ? v.getProduit().getNom() : "", odd);
+                addDataCell(table, v.getClient() != null ? v.getClient().getNom() : "Anonyme", odd);
+                addDataCell(table, String.valueOf(v.getQuantite()), odd);
+                addDataCell(table, String.format(Locale.FRANCE, "%,.2f", v.getMontantTotal()).replace(',', ' '), odd);
+                odd = !odd;
             }
             doc.add(table);
             doc.close();
@@ -233,5 +262,29 @@ public class VenteController {
     private String resolveSortField(String sort) {
         List<String> allowedSorts = List.of("dateVente", "prixUnitaire", "quantite", "id");
         return allowedSorts.contains(sort) ? sort : "dateVente";
+    }
+
+    private void styleHeaderRow(PdfPTable table, BaseColor bgColor) {
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+        for (int i = 0; i < table.getNumberOfColumns(); i++) {
+            PdfPCell old = table.getRow(0).getCells()[i];
+            PdfPCell header = new PdfPCell(new Phrase(old.getPhrase().getContent(), headerFont));
+            header.setBackgroundColor(bgColor);
+            header.setBorder(Rectangle.NO_BORDER);
+            header.setPadding(8f);
+            table.getRow(0).getCells()[i] = header;
+        }
+    }
+
+    private void addDataCell(PdfPTable table, String value, boolean oddRow) {
+        Font rowFont = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, new BaseColor(31, 41, 55));
+        PdfPCell cell = new PdfPCell(new Phrase(value != null ? value : "", rowFont));
+        cell.setPadding(7f);
+        cell.setBorder(Rectangle.BOTTOM);
+        cell.setBorderColor(new BaseColor(229, 231, 235));
+        if (oddRow) {
+            cell.setBackgroundColor(new BaseColor(249, 250, 251));
+        }
+        table.addCell(cell);
     }
 }
