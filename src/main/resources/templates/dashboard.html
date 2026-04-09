@@ -38,6 +38,7 @@
     /* ── MAIN ── */
     .main { margin-left:240px; min-height:100vh; }
     .topbar {
+      display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
       background:#fff; border-bottom:1px solid #e5e7eb;
       padding:14px 28px; position:sticky; top:0; z-index:50;
     }
@@ -145,6 +146,9 @@
       body.sidebar-open .sidebar-overlay { opacity:1; visibility:visible; }
       .main { margin-left:0; min-height:100vh; }
       .topbar { padding:12px 14px; }
+      .topbar > * { min-width:0; }
+      .topbar > div:last-child { width:100%; display:flex; flex-wrap:wrap; gap:8px; }
+      .topbar > div:last-child .btn { flex:1 1 auto; }
     }
   </style>
   <link th:href="@{/css/style.css}" rel="stylesheet">
