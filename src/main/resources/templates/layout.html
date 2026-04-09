@@ -132,6 +132,11 @@
         }
         .demo-chip strong { display: block; color: rgba(255,255,255,.6); font-size: 11px; }
         .mb-18 { margin-bottom: 18px; }
+        @media (max-width: 576px) {
+            body { align-items: flex-start; padding: 16px 10px; }
+            .login-card { padding: 28px 18px; border-radius: 14px; }
+            .demo-row { flex-direction: column; }
+        }
     </style>
   <link th:href="@{/css/style.css}" rel="stylesheet">
 </head>

@@ -19,7 +19,7 @@
         .sidebar .nav-link i { width:18px; text-align:center; font-size:15px; }
         .nav-section { font-size:10px; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.08em; padding:14px 16px 4px; }
         .main { margin-left:240px; min-height:100vh; }
-        .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:14px 28px; position:sticky; top:0; z-index:50; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:#fff; border-bottom:1px solid #e5e7eb; padding:14px 28px; position:sticky; top:0; z-index:50; }
         .metric-sm { background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:16px; }
         .card-section { background:#fff; border-radius:12px; border:1px solid #e5e7eb; overflow:hidden; margin-bottom:20px; }
         .card-section .card-header { background:transparent; border-bottom:1px solid #f3f4f6; padding:14px 18px; font-weight:600; font-size:13px; color:#111827; }
@@ -32,12 +32,38 @@
         .user-avatar { width:32px; height:32px; border-radius:50%; background:rgba(59,130,246,.25); color:#60a5fa; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; flex-shrink:0; }
         .alert-toast { position:fixed; top:20px; right:20px; z-index:9999; min-width:340px; animation:slideIn .3s ease; }
         @keyframes slideIn { from { transform:translateX(110%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    .mobile-nav { display:none; }
+    .mobile-nav-toggle { border:1px solid #d1d5db; background:#fff; color:#111827; border-radius:10px; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; }
+    .sidebar-overlay { display:none; }
+    @media (max-width: 992px) {
+      body.sidebar-open { overflow:hidden; }
+      .mobile-nav { display:flex; position:sticky; top:0; z-index:120; background:#fff; border-bottom:1px solid #e5e7eb; padding:10px 14px; align-items:center; justify-content:space-between; }
+      .mobile-brand { display:flex; align-items:center; gap:10px; font-weight:600; color:#111827; font-size:14px; }
+      .mobile-brand-logo { width:28px; height:28px; background:#3b82f6; color:#fff; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
+      .sidebar { transform:translateX(-100%); transition:transform .25s ease; width:min(86vw, 320px); }
+      body.sidebar-open .sidebar { transform:translateX(0); box-shadow:0 0 0 9999px rgba(15,17,23,.35); }
+      .sidebar-overlay { display:block; position:fixed; inset:0; background:rgba(15,17,23,.45); opacity:0; visibility:hidden; transition:opacity .25s ease; z-index:90; }
+      body.sidebar-open .sidebar-overlay { opacity:1; visibility:visible; }
+      .main { margin-left:0; min-height:100vh; }
+      .topbar { padding:12px 14px; }
+      .topbar > * { min-width:0; }
+      .topbar > div:last-child { width:100%; display:flex; flex-wrap:wrap; gap:8px; }
+      .topbar > div:last-child .btn { flex:1 1 auto; }
+    }
+
     </style>
   <link th:href="@{/css/style.css}" rel="stylesheet">
 </head>
 <body>
+<div class="mobile-nav">
+  <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Ouvrir le menu" aria-expanded="false">
+    <i class="bi bi-list fs-5"></i>
+  </button>
+  <div class="mobile-brand"><span class="mobile-brand-logo">◈</span> MicroBiz Pro</div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<aside class="sidebar">
+<aside class="sidebar" id="sidebarMenu">
     <div class="p-3 border-bottom" style="border-color:rgba(255,255,255,.07)!important">
         <div class="d-flex align-items-center gap-2">
             <div style="width:36px;height:36px;background:#3b82f6;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0">◈</div>
@@ -289,6 +315,25 @@
             a.style.opacity = '0'; a.style.transition = 'opacity .5s';
         });
     }, 5000);
+</script>
+
+<script>
+  (function () {
+    const toggle = document.getElementById('mobileNavToggle');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebarMenu');
+    if (!toggle || !overlay || !sidebar) return;
+
+    const setOpen = (open) => {
+      document.body.classList.toggle('sidebar-open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
+    toggle.addEventListener('click', () => setOpen(!document.body.classList.contains('sidebar-open')));
+    overlay.addEventListener('click', () => setOpen(false));
+    sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setOpen(false)));
+    window.addEventListener('resize', () => { if (window.innerWidth > 992) setOpen(false); });
+  })();
 </script>
 </body>
 </html>
