@@ -32,5 +32,9 @@ public class Depense {
     public void prePersist() {
         if (dateDepense == null)
             dateDepense = LocalDate.now();
+        if (devise == null || devise.isBlank())
+            devise = "XAF";
+        if (tenantKey == null || tenantKey.isBlank())
+            tenantKey = "default";
     }
 }
