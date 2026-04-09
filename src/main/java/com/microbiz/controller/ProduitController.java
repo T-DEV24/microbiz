@@ -17,6 +17,9 @@ import com.microbiz.service.AuditLogService;
 import com.microbiz.service.DepenseService;
 import com.microbiz.service.ProduitService;
 import jakarta.validation.Valid;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -262,6 +265,39 @@ public class ProduitController {
                     .body(baos.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException("Erreur export PDF produits", e);
+        }
+    }
+
+    @GetMapping("/export.xlsx")
+    public ResponseEntity<byte[]> exportXlsx(@RequestParam(required = false) String q) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("Produits");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Nom");
+            header.createCell(1).setCellValue("Catégorie");
+            header.createCell(2).setCellValue("Prix");
+            header.createCell(3).setCellValue("Coût");
+            header.createCell(4).setCellValue("Stock");
+
+            Page<Produit> page = produitService.rechercherActifs(q, PageRequest.of(0, 2000, Sort.by("nom").ascending()));
+            int rowNum = 1;
+            for (Produit p : page.getContent()) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(p.getNom() != null ? p.getNom() : "");
+                row.createCell(1).setCellValue(p.getCategorie() != null ? p.getCategorie() : "");
+                row.createCell(2).setCellValue(p.getPrixVente() != null ? p.getPrixVente() : 0);
+                row.createCell(3).setCellValue(p.getCoutRevient() != null ? p.getCoutRevient() : 0);
+                row.createCell(4).setCellValue(p.getStockActuel() != null ? p.getStockActuel() : 0);
+            }
+            for (int i = 0; i < 5; i++) sheet.autoSizeColumn(i);
+            workbook.write(baos);
+            auditLogService.log("EXPORT_XLSX", "PRODUIT", null, "Export produits XLSX");
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=produits-" + LocalDate.now() + ".xlsx")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(baos.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur export XLSX produits", e);
         }
     }
 

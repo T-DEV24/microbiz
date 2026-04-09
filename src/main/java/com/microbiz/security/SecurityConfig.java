@@ -3,6 +3,7 @@ package com.microbiz.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -53,11 +54,20 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
                                 "/favicon.ico",
                                 "/error"
                         ).permitAll()
                         // Routes ADMIN uniquement
                         .requestMatchers("/utilisateurs/**", "/audit-logs/**").hasRole("ADMIN")
+                        // ROLE_COMMERCIAL : accès complet ventes/clients
+                        .requestMatchers("/ventes/**", "/clients/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
+                        // ROLE_COMMERCIAL : pas d'accès aux dépenses
+                        .requestMatchers("/depenses/**").hasAnyRole("ADMIN", "USER")
+                        // ROLE_COMMERCIAL : stats en lecture seule
+                        .requestMatchers(HttpMethod.GET, "/statistiques/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
+                        .requestMatchers(HttpMethod.POST, "/statistiques/**").hasAnyRole("ADMIN", "USER")
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )

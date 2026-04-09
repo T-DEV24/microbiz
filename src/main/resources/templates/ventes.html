@@ -76,6 +76,7 @@
     </div>
     <div class="d-flex gap-2">
       <a th:href="@{/ventes/export.csv(debut=${debut},fin=${fin},q=${q},sort=${sort},dir=${dir})}" class="btn btn-outline-secondary btn-sm">CSV</a>
+      <a th:href="@{/ventes/export.xlsx(debut=${debut},fin=${fin},q=${q},sort=${sort},dir=${dir})}" class="btn btn-outline-secondary btn-sm">XLSX</a>
       <a th:href="@{/ventes/export.pdf(debut=${debut},fin=${fin},q=${q},sort=${sort},dir=${dir})}" class="btn btn-outline-secondary btn-sm">PDF</a>
     </div>
   </div>
@@ -358,6 +359,19 @@
       a.style.opacity = '0'; a.style.transition = 'opacity .5s';
     });
   }, 5000);
+
+  // Mode hors-ligne : mise en file d'attente des ventes et synchro à la reconnexion
+  document.getElementById('venteForm')?.addEventListener('submit', async (e) => {
+    if (navigator.onLine) return;
+    e.preventDefault();
+    const form = e.target;
+    const payload = Object.fromEntries(new FormData(form).entries());
+    if (window.MicrobizOffline?.queueSale) {
+      await window.MicrobizOffline.queueSale(payload);
+      alert('Connexion indisponible : la vente est enregistrée hors-ligne et sera synchronisée automatiquement.');
+      form.reset();
+    }
+  });
 </script>
 </body>
 </html>

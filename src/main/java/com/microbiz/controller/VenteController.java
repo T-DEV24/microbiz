@@ -13,6 +13,9 @@ import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -250,6 +253,45 @@ public class VenteController {
                     .body(baos.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException("Erreur export PDF ventes", e);
+        }
+    }
+
+    @GetMapping("/export.xlsx")
+    public ResponseEntity<byte[]> exportXlsx(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate debut,
+                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin,
+                                             @RequestParam(required = false) String q,
+                                             @RequestParam(defaultValue = "dateVente") String sort,
+                                             @RequestParam(defaultValue = "desc") String dir) {
+        Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String sortField = resolveSortField(sort);
+        Page<Vente> ventes = venteService.getVentesFiltrees(debut, fin, q, PageRequest.of(0, 2000, Sort.by(direction, sortField)));
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("Ventes");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Date");
+            header.createCell(1).setCellValue("Produit");
+            header.createCell(2).setCellValue("Client");
+            header.createCell(3).setCellValue("Quantité");
+            header.createCell(4).setCellValue("Montant");
+
+            int i = 1;
+            for (Vente v : ventes.getContent()) {
+                Row row = sheet.createRow(i++);
+                row.createCell(0).setCellValue(v.getDateVente() != null ? v.getDateVente().toString() : "");
+                row.createCell(1).setCellValue(v.getProduit() != null ? v.getProduit().getNom() : "");
+                row.createCell(2).setCellValue(v.getClient() != null ? v.getClient().getNom() : "Anonyme");
+                row.createCell(3).setCellValue(v.getQuantite() != null ? v.getQuantite() : 0);
+                row.createCell(4).setCellValue(v.getMontantTotal());
+            }
+            for (int c = 0; c < 5; c++) sheet.autoSizeColumn(c);
+            workbook.write(baos);
+            auditLogService.log("EXPORT_XLSX", "VENTE", null, "Export ventes filtrées");
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ventes-" + LocalDate.now() + ".xlsx")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(baos.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur export XLSX ventes", e);
         }
     }
 
