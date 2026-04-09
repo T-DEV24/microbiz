@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Fournisseurs', 'Gestion des fournisseurs', 'fournisseurs')">
+<div th:fragment="content">
+    <style>
+        .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+        .page-title { font-size:28px; font-weight:700; color:#111827; line-height:1.2; }
+        .page-sub { color:#6b7280; font-size:13px; margin-top:4px; }
+        .content { padding:24px; }
+        .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:16px; }
+        .card-header { padding:14px 16px; border-bottom:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center; }
+        .card-title { font-size:14px; font-weight:700; color:#1f2937; }
+        .card-body { padding:16px; }
+        .form-control-dark { width:100%; background:#fff; border:1px solid #d1d5db; border-radius:8px; padding:10px 12px; font-size:14px; }
+        .action-btn { border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:8px; padding:6px 10px; font-size:12px; text-decoration:none; }
+        .btn-edit { border-color:#c7d2fe; color:#4338ca; background:#eef2ff; }
+        .btn-delete { border-color:#fecaca; color:#b91c1c; background:#fef2f2; }
+        table { width:100%; border-collapse:collapse; }
+        th, td { padding:10px 12px; border-bottom:1px solid #f1f5f9; font-size:14px; }
+        th { color:#6b7280; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+        .alert-success { border:1px solid #bbf7d0; background:#f0fdf4; color:#166534; border-radius:10px; padding:10px 12px; margin-bottom:12px; }
+    </style>
+
+    <div class="topbar">
+        <div>
+            <div class="page-title">Fournisseurs</div>
+            <div class="page-sub" th:text="${fournisseursPage.totalElements} + ' fournisseur(s)'">0 fournisseur(s)</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+            <a href="/fournisseurs/nouveau" class="action-btn btn-edit">+ Nouveau fournisseur</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
+
+        <form th:action="@{/fournisseurs}" method="get" style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+            <input type="text" name="q" class="form-control-dark" placeholder="Rechercher un fournisseur..." th:value="${q}" style="max-width:260px">
+            <label style="font-size:12px;color:#6b7280">Taille</label>
+            <select name="size" class="form-control-dark" style="width:auto">
+                <option th:selected="${size == 10}" value="10">10</option>
+                <option th:selected="${size == 15}" value="15">15</option>
+                <option th:selected="${size == 20}" value="20">20</option>
+                <option th:selected="${size == 50}" value="50">50</option>
+            </select>
+            <input type="hidden" name="sort" th:value="${sort}">
+            <input type="hidden" name="dir" th:value="${dir}">
+            <button type="submit" class="action-btn btn-edit">Filtrer</button>
+        </form>
+
+        <div class="card">
+            <div class="card-header"><div class="card-title">Répertoire fournisseurs</div></div>
+            <div class="card-body">
+                <table>
+                    <thead><tr>
+                        <th><a th:href="@{/fournisseurs(page=0,size=${size},sort='nom',dir=${sort=='nom' and dir=='asc' ? 'desc':'asc'},q=${q})}">Nom</a></th>
+                        <th><a th:href="@{/fournisseurs(page=0,size=${size},sort='telephone',dir=${sort=='telephone' and dir=='asc' ? 'desc':'asc'},q=${q})}">Téléphone</a></th>
+                        <th><a th:href="@{/fournisseurs(page=0,size=${size},sort='email',dir=${sort=='email' and dir=='asc' ? 'desc':'asc'},q=${q})}">Email</a></th>
+                        <th></th>
+                    </tr></thead>
+                    <tbody>
+                    <tr th:each="f : ${fournisseurs}">
+                        <td th:text="${f.nom}">--</td>
+                        <td th:text="${f.telephone != null ? f.telephone : '—'}">—</td>
+                        <td th:text="${f.email != null ? f.email : '—'}">—</td>
+                        <td>
+                            <a th:href="@{/fournisseurs/modifier/{id}(id=${f.id})}" class="action-btn btn-edit">Modifier</a>
+                            <form th:action="@{/fournisseurs/supprimer/{id}(id=${f.id})}" method="post" style="display:inline">
+                                <button type="submit" class="action-btn btn-delete" onclick="return confirm('Supprimer ce fournisseur ?')">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(fournisseurs)}"><td colspan="4">Aucun fournisseur.</td></tr>
+                    </tbody>
+                </table>
+
+                <div style="display:flex;justify-content:space-between;margin-top:12px;align-items:center" th:if="${fournisseursPage.totalPages > 1}">
+                    <small style="color:#6b7280" th:text="'Page ' + (${fournisseursPage.number}+1) + ' / ' + ${fournisseursPage.totalPages}"></small>
+                    <div style="display:flex;gap:8px">
+                        <a class="action-btn btn-edit" th:if="${fournisseursPage.hasPrevious()}"
+                           th:href="@{/fournisseurs(page=${fournisseursPage.number-1},size=${size},sort=${sort},dir=${dir},q=${q})}">Précédent</a>
+                        <a class="action-btn btn-edit" th:if="${fournisseursPage.hasNext()}"
+                           th:href="@{/fournisseurs(page=${fournisseursPage.number+1},size=${size},sort=${sort},dir=${dir},q=${q})}">Suivant</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

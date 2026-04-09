@@ -1,6 +1,7 @@
 package com.microbiz.service;
 
 import com.microbiz.model.Depense;
+import com.microbiz.security.TenantContext;
 import com.microbiz.repository.DepenseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,9 +14,13 @@ import java.util.*;
 public class DepenseService {
 
     @Autowired private DepenseRepository depenseRepository;
+    @Autowired private CurrencyRateService currencyRateService;
 
     public List<Depense> findAll() {
-        return depenseRepository.findAllByOrderByDateDepenseDesc();
+        String tenant = TenantContext.getTenant();
+        return depenseRepository.findAllByOrderByDateDepenseDesc().stream()
+                .filter(d -> tenant.equals(d.getTenantKey()))
+                .toList();
     }
 
     public Optional<Depense> findById(Long id) { return depenseRepository.findById(id); }
@@ -25,23 +30,31 @@ public class DepenseService {
     public void deleteById(Long id) { depenseRepository.deleteById(id); }
 
     public List<Depense> getDepensesParPeriode(LocalDate debut, LocalDate fin) {
-        return depenseRepository.findByDateDepenseBetweenOrderByDateDepenseDesc(debut, fin);
+        String tenant = TenantContext.getTenant();
+        return depenseRepository.findByDateDepenseBetweenOrderByDateDepenseDesc(debut, fin).stream()
+                .filter(d -> tenant.equals(d.getTenantKey()))
+                .toList();
     }
 
     public Double getTotalParPeriode(LocalDate debut, LocalDate fin) {
-        Double t = depenseRepository.calculerTotalParPeriode(debut, fin);
-        return t != null ? t : 0.0;
+        return depenseRepository.findByDateDepenseBetweenOrderByDateDepenseDesc(debut, fin).stream()
+                .mapToDouble(d -> currencyRateService.toBase(d.getMontant() != null ? d.getMontant() : 0.0, d.getDevise()))
+                .sum();
     }
 
     public Double getTotalDepenses() {
-        Double t = depenseRepository.calculerTotal();
-        return t != null ? t : 0.0;
+        return findAll().stream()
+                .mapToDouble(d -> currencyRateService.toBase(d.getMontant() != null ? d.getMontant() : 0.0, d.getDevise()))
+                .sum();
     }
 
     public Double getDepensesDuMois() {
-        Double t = depenseRepository.calculerDepensesDuMois(
-                LocalDate.now().getMonthValue(), LocalDate.now().getYear());
-        return t != null ? t : 0.0;
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
+        return findAll().stream()
+                .filter(d -> d.getDateDepense() != null && d.getDateDepense().getMonthValue() == month && d.getDateDepense().getYear() == year)
+                .mapToDouble(d -> currencyRateService.toBase(d.getMontant() != null ? d.getMontant() : 0.0, d.getDevise()))
+                .sum();
     }
 
 
@@ -51,7 +64,7 @@ public class DepenseService {
             String categorie = depense.getCategorie() == null || depense.getCategorie().isBlank()
                     ? "Autres"
                     : depense.getCategorie();
-            double montant = depense.getMontant() == null ? 0.0 : depense.getMontant();
+            double montant = currencyRateService.toBase(depense.getMontant() == null ? 0.0 : depense.getMontant(), depense.getDevise());
             result.put(categorie, result.getOrDefault(categorie, 0.0) + montant);
         }
         return result;

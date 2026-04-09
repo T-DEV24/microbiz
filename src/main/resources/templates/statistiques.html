@@ -110,6 +110,23 @@
             <div class="col-lg-6"><div class="chart-card"><div class="card-header"><i class="bi bi-bar-chart-line me-2 text-success"></i>CA vs Dépenses vs Bénéfice</div><div class="p-3"><div style="position:relative;height:220px"><canvas id="chartBen"></canvas></div></div></div></div>
             <div class="col-lg-6"><div class="chart-card"><div class="card-header"><i class="bi bi-trophy me-2 text-warning"></i>Top produits (Top <span th:text="${top}">5</span>)</div><div th:each="item, stat : ${topProduits}" class="top-item"><div class="top-rank" th:classappend="${stat.index==0}?' gold':(${stat.index==1}?' silver':(${stat.index==2}?' bronze':''))" th:text="${stat.index+1}">1</div><div class="flex-grow-1"><div style="font-size:13px;font-weight:500;color:#111827" th:text="${item['produit'].nom}">--</div><div style="font-size:11px;color:#9ca3af" th:text="${item['quantite']} + ' unités'">0</div><div class="progress-bar-thin"><div class="progress-fill" th:style="'width:' + ${100 - stat.index * 18} + '%'"></div></div></div><div style="font-size:12px;font-weight:600;color:#059669;font-family:'DM Mono',monospace" th:text="${#numbers.formatDecimal(item['ca'],0,'COMMA',0,'POINT')} + ' F'">0 F</div></div><div th:if="${#lists.isEmpty(topProduits)}" class="text-center text-muted py-4" style="font-size:13px">Aucune vente.</div></div></div>
         </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="chart-card">
+                    <div class="card-header"><i class="bi bi-stars me-2 text-primary"></i>Prévisions IA (3 prochains mois)</div>
+                    <div class="p-3">
+                        <div class="d-flex flex-wrap gap-2" th:if="${previsionsVentes != null and !previsionsVentes.isEmpty()}">
+                            <div class="badge text-bg-light border" th:each="p : ${previsionsVentes}">
+                                <span th:text="${p.key}">2026-01</span> :
+                                <strong th:text="${#numbers.formatDecimal(p.value,0,'COMMA',0,'POINT')} + ' F'">0 F</strong>
+                            </div>
+                        </div>
+                        <div class="text-muted" style="font-size:12px" th:if="${previsionsVentes == null or previsionsVentes.isEmpty()}">Pas assez d'historique pour établir une prévision.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

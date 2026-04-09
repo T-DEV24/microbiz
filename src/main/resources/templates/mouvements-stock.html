@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Mouvements de stock', 'Historique des entrées/sorties', 'mouvements-stock')">
+<div th:fragment="content">
+    <style>
+        .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+        .page-title { font-size:28px; font-weight:700; color:#111827; line-height:1.2; }
+        .page-sub { color:#6b7280; font-size:13px; margin-top:4px; }
+        .content { padding:24px; }
+        .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:16px; }
+        .card-header { padding:14px 16px; border-bottom:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center; }
+        .card-title { font-size:14px; font-weight:700; color:#1f2937; }
+        .action-btn { border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:8px; padding:6px 10px; font-size:12px; text-decoration:none; }
+        .btn-edit { border-color:#c7d2fe; color:#4338ca; background:#eef2ff; }
+        .form-control-dark { width:100%; background:#fff; border:1px solid #d1d5db; border-radius:8px; padding:10px 12px; font-size:14px; }
+        table { width:100%; border-collapse:collapse; }
+        th, td { padding:10px 12px; border-bottom:1px solid #f1f5f9; font-size:14px; }
+        th { color:#6b7280; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+    </style>
+
+    <div class="topbar">
+        <div>
+            <div class="page-title">Mouvements de stock</div>
+            <div class="page-sub" th:text="${mouvementsPage.totalElements} + ' mouvement(s)'">0 mouvement(s)</div>
+        </div>
+    </div>
+
+    <div class="content">
+        <form th:action="@{/mouvements-stock}" method="get" style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+            <label style="font-size:12px;color:#6b7280">Taille</label>
+            <select name="size" class="form-control-dark" style="width:auto">
+                <option th:selected="${size == 10}" value="10">10</option>
+                <option th:selected="${size == 20}" value="20">20</option>
+                <option th:selected="${size == 50}" value="50">50</option>
+            </select>
+            <input type="hidden" name="sort" th:value="${sort}">
+            <input type="hidden" name="dir" th:value="${dir}">
+            <button type="submit" class="action-btn btn-edit">Appliquer</button>
+        </form>
+
+        <div class="card">
+            <div class="card-header"><div class="card-title">Historique des mouvements</div></div>
+            <div style="padding:16px">
+                <table>
+                    <thead>
+                    <tr>
+                        <th><a th:href="@{/mouvements-stock(page=0,size=${size},sort='createdAt',dir=${sort=='createdAt' and dir=='asc' ? 'desc':'asc'})}">Date</a></th>
+                        <th>Produit</th>
+                        <th><a th:href="@{/mouvements-stock(page=0,size=${size},sort='type',dir=${sort=='type' and dir=='asc' ? 'desc':'asc'})}">Type</a></th>
+                        <th><a th:href="@{/mouvements-stock(page=0,size=${size},sort='quantite',dir=${sort=='quantite' and dir=='asc' ? 'desc':'asc'})}">Quantité</a></th>
+                        <th>Référence</th>
+                        <th>Commentaire</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="m : ${mouvements}">
+                        <td th:text="${#temporals.format(m.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
+                        <td th:text="${m.produit != null ? m.produit.nom : '—'}">—</td>
+                        <td th:text="${m.type}">—</td>
+                        <td th:text="${m.quantite}">0</td>
+                        <td th:text="${m.reference != null ? m.reference : '—'}">—</td>
+                        <td th:text="${m.commentaire != null ? m.commentaire : '—'}">—</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(mouvements)}"><td colspan="6">Aucun mouvement de stock enregistré.</td></tr>
+                    </tbody>
+                </table>
+
+                <div style="display:flex;justify-content:space-between;margin-top:12px;align-items:center" th:if="${mouvementsPage.totalPages > 1}">
+                    <small style="color:#6b7280" th:text="'Page ' + (${mouvementsPage.number}+1) + ' / ' + ${mouvementsPage.totalPages}"></small>
+                    <div style="display:flex;gap:8px">
+                        <a class="action-btn btn-edit" th:if="${mouvementsPage.hasPrevious()}"
+                           th:href="@{/mouvements-stock(page=${mouvementsPage.number-1},size=${size},sort=${sort},dir=${dir})}">Précédent</a>
+                        <a class="action-btn btn-edit" th:if="${mouvementsPage.hasNext()}"
+                           th:href="@{/mouvements-stock(page=${mouvementsPage.number+1},size=${size},sort=${sort},dir=${dir})}">Suivant</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

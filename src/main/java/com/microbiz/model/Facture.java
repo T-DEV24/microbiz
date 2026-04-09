@@ -55,6 +55,11 @@ public class Facture {
     @Column(nullable = false)
     private Double montantTtc;
 
+    @Column(length = 8, nullable = false)
+    private String devise = "XAF";
+    @Column(name = "tenant_key", nullable = false)
+    private String tenantKey = "default";
+
     @OneToMany(mappedBy = "facture", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<FactureLigne> lignes = new ArrayList<>();

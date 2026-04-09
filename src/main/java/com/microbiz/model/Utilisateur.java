@@ -26,4 +26,7 @@ public class Utilisateur {
     public boolean isAdmin() {
         return "ROLE_ADMIN".equals(role);
     }
+    public boolean isCommercial() {
+        return "ROLE_COMMERCIAL".equals(role);
+    }
 }

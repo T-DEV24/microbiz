@@ -2,9 +2,18 @@ package com.microbiz.service;
 
 import com.microbiz.model.Facture;
 import com.microbiz.model.FactureLigne;
+import com.microbiz.model.EntrepriseSettings;
+import com.microbiz.security.TenantContext;
+import com.lowagie.text.Font;
+import com.lowagie.text.Image;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import com.microbiz.repository.FactureRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,12 +23,15 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.io.ByteArrayOutputStream;
 
 @Service
 @Transactional
 public class FactureService {
 
     @Autowired private FactureRepository factureRepository;
+    @Autowired private EmailNotificationService emailNotificationService;
+    @Autowired private EntrepriseSettingsService entrepriseSettingsService;
     private static final Map<Facture.StatutFacture, EnumSet<Facture.StatutFacture>> TRANSITIONS_AUTORISEES =
             new EnumMap<>(Facture.StatutFacture.class);
 
@@ -35,7 +47,18 @@ public class FactureService {
     }
 
     public List<Facture> findAll() {
-        return factureRepository.findAll();
+        String tenant = TenantContext.getTenant();
+        return factureRepository.findAll().stream().filter(f -> tenant.equals(f.getTenantKey())).toList();
+    }
+
+    public Facture findById(Long id) {
+        String tenant = TenantContext.getTenant();
+        Facture facture = factureRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Facture introuvable"));
+        if (!tenant.equals(facture.getTenantKey())) {
+            throw new RuntimeException("Facture introuvable");
+        }
+        return facture;
     }
 
     public Page<Facture> search(String q,
@@ -43,7 +66,10 @@ public class FactureService {
                                 LocalDate debut,
                                 LocalDate fin,
                                 Pageable pageable) {
-        return factureRepository.search(q, statut, debut, fin, pageable);
+        String tenant = TenantContext.getTenant();
+        Page<Facture> page = factureRepository.search(q, statut, debut, fin, pageable);
+        List<Facture> filtered = page.getContent().stream().filter(f -> tenant.equals(f.getTenantKey())).toList();
+        return new PageImpl<>(filtered, pageable, filtered.size());
     }
 
     public Facture create(Facture facture) {
@@ -56,6 +82,10 @@ public class FactureService {
         if (facture.getStatut() == null) {
             facture.setStatut(Facture.StatutFacture.BROUILLON);
         }
+        if (facture.getDevise() == null || facture.getDevise().isBlank()) {
+            facture.setDevise("XAF");
+        }
+        facture.setTenantKey(TenantContext.getTenant());
         recalculerMontant(facture);
         return factureRepository.save(facture);
     }
@@ -65,7 +95,11 @@ public class FactureService {
                 .orElseThrow(() -> new RuntimeException("Facture introuvable"));
         validerTransitionStatut(facture.getStatut(), statut);
         facture.setStatut(statut);
-        return factureRepository.save(facture);
+        Facture saved = factureRepository.save(facture);
+        if (statut == Facture.StatutFacture.ENVOYEE) {
+            emailNotificationService.sendFactureEnvoyee(saved);
+        }
+        return saved;
     }
 
     private void validerTransitionStatut(Facture.StatutFacture actuel, Facture.StatutFacture cible) {
@@ -115,5 +149,57 @@ public class FactureService {
         } while (factureRepository.existsByNumero(numero));
 
         return numero;
+    }
+
+    public byte[] genererPdf(Long id) {
+        Facture facture = findById(id);
+        EntrepriseSettings settings = entrepriseSettingsService.getSettings();
+
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            com.lowagie.text.Document doc = new com.lowagie.text.Document(PageSize.A4, 36, 36, 42, 36);
+            PdfWriter.getInstance(doc, baos);
+            doc.open();
+
+            if (settings.getLogo() != null && settings.getLogo().length > 0) {
+                Image logo = Image.getInstance(settings.getLogo());
+                logo.scaleToFit(100, 50);
+                doc.add(logo);
+            }
+            doc.add(new Paragraph(settings.getNomEntreprise(), new Font(Font.HELVETICA, 14, Font.BOLD)));
+            doc.add(new Paragraph("Adresse: " + (settings.getAdresse() != null ? settings.getAdresse() : "—")));
+            doc.add(new Paragraph("SIRET: " + (settings.getSiret() != null ? settings.getSiret() : "—")
+                    + " | RCCM: " + (settings.getRccm() != null ? settings.getRccm() : "—")));
+            doc.add(new Paragraph(" "));
+            doc.add(new Paragraph("Document " + facture.getNumero() + " - " + facture.getType()));
+            doc.add(new Paragraph("Client: " + facture.getClientNom()));
+            doc.add(new Paragraph("Date émission: " + facture.getDateEmission()));
+            doc.add(new Paragraph("Échéance: " + (facture.getDateEcheance() != null ? facture.getDateEcheance() : "—")));
+            doc.add(new Paragraph("Devise: " + (facture.getDevise() != null ? facture.getDevise() : "XAF")));
+            doc.add(new Paragraph(" "));
+
+            PdfPTable table = new PdfPTable(4);
+            table.setWidthPercentage(100);
+            table.addCell("Description");
+            table.addCell("Qté");
+            table.addCell("PU");
+            table.addCell("Total");
+            for (FactureLigne l : facture.getLignes()) {
+                table.addCell(l.getDescription());
+                table.addCell(String.valueOf(l.getQuantite()));
+                table.addCell(String.valueOf(l.getPrixUnitaire()));
+                table.addCell(String.format("%,.0f", l.getTotalLigne()).replace(',', ' '));
+            }
+            doc.add(table);
+            doc.add(new Paragraph("Montant TTC: " + String.format("%,.0f", facture.getMontantTtc()).replace(',', ' ') + " " + facture.getDevise()));
+            if (settings.getMentionsLegales() != null && !settings.getMentionsLegales().isBlank()) {
+                doc.add(new Paragraph(" "));
+                doc.add(new Paragraph("Mentions légales: " + settings.getMentionsLegales()));
+            }
+            doc.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur génération PDF facture", e);
+        }
     }
 }

@@ -80,6 +80,7 @@
         <i class="bi bi-plus-lg"></i> Nouveau produit
       </a>
       <a th:href="@{/produits/export.csv(q=${q})}" class="btn btn-outline-secondary btn-sm">CSV</a>
+      <a th:href="@{/produits/export.xlsx(q=${q})}" class="btn btn-outline-secondary btn-sm">XLSX</a>
       <a th:href="@{/produits/export.pdf(q=${q})}" class="btn btn-outline-secondary btn-sm">PDF</a>
       <a th:href="@{/produits(trash=${!trash})}" class="btn btn-outline-danger btn-sm" th:text="${trash ? 'Voir actifs' : 'Corbeille'}">Corbeille</a>
     </div>

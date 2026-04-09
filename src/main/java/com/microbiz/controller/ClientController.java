@@ -1,10 +1,16 @@
 package com.microbiz.controller;
 
 import com.microbiz.model.Client;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import com.microbiz.service.AuditLogService;
 import com.microbiz.service.ClientService;
 import jakarta.validation.Valid;
@@ -22,6 +28,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayOutputStream;
+import java.awt.Color;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
@@ -129,20 +136,41 @@ public class ClientController {
         try {
             Page<Client> page = clientService.rechercherActifs(q, PageRequest.of(0, 500, Sort.by("nom").ascending()));
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Document doc = new Document();
+            Document doc = new Document(PageSize.A4, 36, 36, 42, 36);
             PdfWriter.getInstance(doc, baos);
             doc.open();
-            doc.add(new Paragraph("Export clients - " + LocalDate.now()));
+
+            Color primary = new Color(37, 99, 235);
+            Color muted = new Color(107, 114, 128);
+            Font titleFont = new Font(Font.HELVETICA, 16, Font.BOLD, primary);
+            Font infoFont = new Font(Font.HELVETICA, 10, Font.NORMAL, muted);
+
+            Paragraph title = new Paragraph("MicroBiz Pro — Export Clients", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(4f);
+            doc.add(title);
+
+            Paragraph info = new Paragraph("Généré le " + LocalDate.now() + " • " + page.getTotalElements() + " client(s)", infoFont);
+            info.setAlignment(Element.ALIGN_CENTER);
+            info.setSpacingAfter(16f);
+            doc.add(info);
+
             PdfPTable table = new PdfPTable(4);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2f, 1.5f, 2.2f, 1.4f});
             table.addCell("Nom");
             table.addCell("Téléphone");
             table.addCell("Email");
             table.addCell("Inscription");
+            styleHeaderRow(table, primary);
+
+            boolean odd = false;
             for (Client c : page.getContent()) {
-                table.addCell(c.getNom() != null ? c.getNom() : "");
-                table.addCell(c.getTelephone() != null ? c.getTelephone() : "");
-                table.addCell(c.getEmail() != null ? c.getEmail() : "");
-                table.addCell(c.getDateInscription() != null ? c.getDateInscription().toString() : "");
+                addDataCell(table, c.getNom(), odd);
+                addDataCell(table, c.getTelephone(), odd);
+                addDataCell(table, c.getEmail(), odd);
+                addDataCell(table, c.getDateInscription() != null ? c.getDateInscription().toString() : "", odd);
+                odd = !odd;
             }
             doc.add(table);
             doc.close();
@@ -160,5 +188,29 @@ public class ClientController {
         if (value == null) return "";
         String escaped = value.replace("\"", "\"\"");
         return "\"" + escaped + "\"";
+    }
+
+    private void styleHeaderRow(PdfPTable table, Color bgColor) {
+        Font headerFont = new Font(Font.HELVETICA, 10, Font.BOLD, Color.WHITE);
+        for (int i = 0; i < table.getNumberOfColumns(); i++) {
+            PdfPCell old = table.getRow(0).getCells()[i];
+            PdfPCell header = new PdfPCell(new Phrase(old.getPhrase().getContent(), headerFont));
+            header.setBackgroundColor(bgColor);
+            header.setBorder(Rectangle.NO_BORDER);
+            header.setPadding(8f);
+            table.getRow(0).getCells()[i] = header;
+        }
+    }
+
+    private void addDataCell(PdfPTable table, String value, boolean oddRow) {
+        Font rowFont = new Font(Font.HELVETICA, 9, Font.NORMAL, new Color(31, 41, 55));
+        PdfPCell cell = new PdfPCell(new Phrase(value != null ? value : "", rowFont));
+        cell.setPadding(7f);
+        cell.setBorder(Rectangle.BOTTOM);
+        cell.setBorderColor(new Color(229, 231, 235));
+        if (oddRow) {
+            cell.setBackgroundColor(new Color(249, 250, 251));
+        }
+        table.addCell(cell);
     }
 }
