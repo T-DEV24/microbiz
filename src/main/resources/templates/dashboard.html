@@ -474,6 +474,7 @@
 <script th:inline="javascript">
   const evolutionCA   = /*[[${evolutionCA}]]*/ {};
   const depensesCateg = /*[[${depensesCategories}]]*/ {};
+  const devisePrincipale = /*[[${devisePrincipale}]]*/ 'XAF';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -483,7 +484,7 @@
     data: {
       labels: Object.keys(evolutionCA),
       datasets: [{
-        label: 'CA (FCFA)', data: Object.values(evolutionCA),
+        label: 'CA (' + devisePrincipale + ')', data: Object.values(evolutionCA),
         backgroundColor: 'rgba(59,130,246,.6)', borderColor: '#3b82f6',
         borderWidth: 2, borderRadius: 6
       }]

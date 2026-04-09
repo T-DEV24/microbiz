@@ -18,6 +18,7 @@ public class DashboardController {
     @Autowired private VenteService       venteService;
     @Autowired private ProduitService     produitService;
     @Autowired private DepenseService     depenseService;
+    @Autowired private CurrencyRateService currencyRateService;
 
     @GetMapping({"/", "/dashboard"})
     public String dashboard(
@@ -31,6 +32,7 @@ public class DashboardController {
         model.addAttribute("marge",    statistiqueService.getMargeBeneficiaire());
         model.addAttribute("caJour",   venteService.getCADuJour());
         model.addAttribute("nbTransactions", venteService.getNbTransactionsDuJour());
+        model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
 
         // AMÉLIORATION 1 : évolution selon la période choisie
         if ("semaine".equals(periode)) {

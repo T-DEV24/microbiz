@@ -5,6 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,6 +24,7 @@ public class CurrencyRateService {
     private String currencyApiUrl;
 
     private final Map<String, Double> ratesToBase = new ConcurrentHashMap<>();
+    private static final List<String> SUPPORTED_CURRENCIES = List.of("XAF", "EUR", "USD", "GNF");
 
     public CurrencyRateService() {
         ratesToBase.put("XAF", 1.0);
@@ -57,7 +59,7 @@ public class CurrencyRateService {
     }
 
     public double toBase(double amount, String currency) {
-        String c = currency == null || currency.isBlank() ? baseCurrency : currency.toUpperCase();
+        String c = normalizeCurrency(currency);
         if (c.equals(baseCurrency.toUpperCase())) {
             return amount;
         }
@@ -65,8 +67,38 @@ public class CurrencyRateService {
         return amount * rate;
     }
 
+    public double fromBase(double amount, String targetCurrency) {
+        String c = normalizeCurrency(targetCurrency);
+        if (c.equals(baseCurrency.toUpperCase())) {
+            return amount;
+        }
+        double rate = ratesToBase.getOrDefault(c, 1.0);
+        return rate <= 0 ? amount : amount / rate;
+    }
+
+    public double convert(double amount, String fromCurrency, String toCurrency) {
+        double baseAmount = toBase(amount, fromCurrency);
+        return fromBase(baseAmount, toCurrency);
+    }
+
     public String getBaseCurrency() {
         return baseCurrency;
+    }
+
+    public List<String> getSupportedCurrencies() {
+        return SUPPORTED_CURRENCIES;
+    }
+
+    public boolean isSupported(String currency) {
+        if (currency == null || currency.isBlank()) return false;
+        return SUPPORTED_CURRENCIES.contains(currency.toUpperCase());
+    }
+
+    public String normalizeCurrency(String currency) {
+        String normalized = (currency == null || currency.isBlank())
+                ? baseCurrency
+                : currency.toUpperCase();
+        return isSupported(normalized) ? normalized : baseCurrency.toUpperCase();
     }
 
     public Map<String, Double> getRatesToBase() {

@@ -172,11 +172,12 @@
     const beneficeVal = /*[[${benefice}]]*/ 0;
     const depensesVal = /*[[${depenses}]]*/ 0;
     const caTotalVal = /*[[${caTotal}]]*/ 0;
+    const devisePrincipale = /*[[${devisePrincipale}]]*/ 'XAF';
 </script>
 <script>
     const gridColor = 'rgba(0,0,0,.05)';
     const tickColor = '#9ca3af';
-    new Chart(document.getElementById('chartCA'), {type: 'line', data: {labels: Object.keys(evolutionCA), datasets: [{label: 'CA (FCFA)', data: Object.values(evolutionCA), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.08)', fill: true, tension: .4, pointRadius: 5, pointBackgroundColor: '#3b82f6', borderWidth: 2}]}, options: {responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: {x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } }}}});
+    new Chart(document.getElementById('chartCA'), {type: 'line', data: {labels: Object.keys(evolutionCA), datasets: [{label: 'CA (' + devisePrincipale + ')', data: Object.values(evolutionCA), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.08)', fill: true, tension: .4, pointRadius: 5, pointBackgroundColor: '#3b82f6', borderWidth: 2}]}, options: {responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: {x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } }}}});
     new Chart(document.getElementById('chartDep'), {type: 'doughnut', data: {labels: Object.keys(depensesCateg), datasets: [{data: Object.values(depensesCateg), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'], borderWidth: 0}]}, options: {responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, boxWidth: 10 } } }}});
     new Chart(document.getElementById('chartBen'), {type: 'bar', data: {labels: ['Synthèse financière'], datasets: [{ label: 'CA', data: [caTotalVal], backgroundColor: 'rgba(59,130,246,.7)', borderRadius: 6 },{ label: 'Dépenses', data: [depensesVal], backgroundColor: 'rgba(220,38,38,.7)', borderRadius: 6 },{ label: 'Bénéfice', data: [beneficeVal], backgroundColor: 'rgba(16,185,129,.7)', borderRadius: 6 }]}, options: {responsive: true, maintainAspectRatio: false}});
 </script>

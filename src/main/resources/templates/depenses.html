@@ -271,7 +271,7 @@
                              class="alert alert-info d-flex align-items-center gap-2 py-2 mb-2" style="font-size:12px">
                             <i class="bi bi-funnel-fill flex-shrink-0"></i>
                             Période filtrée — Total :
-                            <strong th:text="${#numbers.formatDecimal(totalFiltre,0,'COMMA',0,'POINT')} + ' FCFA'"></strong>
+                            <strong th:text="${#numbers.formatDecimal(totalFiltre,0,'COMMA',0,'POINT')} + ' ' + ${devisePrincipale}"></strong>
                         </div>
                     </div>
 

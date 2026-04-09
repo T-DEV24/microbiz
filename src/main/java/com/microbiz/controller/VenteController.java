@@ -106,7 +106,7 @@ public class VenteController {
         model.addAttribute("sort", sortField);
         model.addAttribute("dir", direction.name().toLowerCase());
         model.addAttribute("size", pageable.getPageSize());
-        model.addAttribute("devises", List.of("XAF", "EUR", "USD", "GNF"));
+        model.addAttribute("devises", currencyRateService.getSupportedCurrencies());
         model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
         model.addAttribute("ratesToBase", currencyRateService.getRatesToBase());
         return "ventes";
@@ -136,8 +136,12 @@ public class VenteController {
             Vente vente = new Vente();
             vente.setProduit(produit);
             vente.setQuantite(quantite);
-            vente.setPrixUnitaire(prixUnitaire);
-            vente.setDevise((devise == null || devise.isBlank()) ? "XAF" : devise.toUpperCase(Locale.ROOT));
+            String deviseNormalizee = currencyRateService.normalizeCurrency(devise);
+            double prixBase = currencyRateService.toBase(prixUnitaire, deviseNormalizee);
+            double prixUnitaireNormalise = currencyRateService.fromBase(prixBase, deviseNormalizee);
+
+            vente.setPrixUnitaire(prixUnitaireNormalise);
+            vente.setDevise(deviseNormalizee);
             vente.setTenantKey(TenantContext.getTenant());
             if (clientId != null)
                 vente.setClient(clientService.findById(clientId).orElse(null));
@@ -146,7 +150,7 @@ public class VenteController {
             auditLogService.log("CREATE", "VENTE", saved.getId(), "Enregistrement vente");
 
             int stockRestant = stockActuel - quantite;
-            double total = quantite * prixUnitaire;
+            double total = quantite * prixUnitaireNormalise;
             ra.addFlashAttribute("succes",
                     "Vente enregistrée — " + quantite + " × « " + produit.getNom()
                             + " » = " + String.format("%,.2f", total).replace(',', ' ')
