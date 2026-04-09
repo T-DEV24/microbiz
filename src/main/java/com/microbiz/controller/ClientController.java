@@ -1,8 +1,15 @@
 package com.microbiz.controller;
 
 import com.microbiz.model.Client;
+import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.microbiz.service.AuditLogService;
@@ -129,20 +136,41 @@ public class ClientController {
         try {
             Page<Client> page = clientService.rechercherActifs(q, PageRequest.of(0, 500, Sort.by("nom").ascending()));
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Document doc = new Document();
+            Document doc = new Document(PageSize.A4, 36, 36, 42, 36);
             PdfWriter.getInstance(doc, baos);
             doc.open();
-            doc.add(new Paragraph("Export clients - " + LocalDate.now()));
+
+            BaseColor primary = new BaseColor(37, 99, 235);
+            BaseColor muted = new BaseColor(107, 114, 128);
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, primary);
+            Font infoFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, muted);
+
+            Paragraph title = new Paragraph("MicroBiz Pro — Export Clients", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(4f);
+            doc.add(title);
+
+            Paragraph info = new Paragraph("Généré le " + LocalDate.now() + " • " + page.getTotalElements() + " client(s)", infoFont);
+            info.setAlignment(Element.ALIGN_CENTER);
+            info.setSpacingAfter(16f);
+            doc.add(info);
+
             PdfPTable table = new PdfPTable(4);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2f, 1.5f, 2.2f, 1.4f});
             table.addCell("Nom");
             table.addCell("Téléphone");
             table.addCell("Email");
             table.addCell("Inscription");
+            styleHeaderRow(table, primary);
+
+            boolean odd = false;
             for (Client c : page.getContent()) {
-                table.addCell(c.getNom() != null ? c.getNom() : "");
-                table.addCell(c.getTelephone() != null ? c.getTelephone() : "");
-                table.addCell(c.getEmail() != null ? c.getEmail() : "");
-                table.addCell(c.getDateInscription() != null ? c.getDateInscription().toString() : "");
+                addDataCell(table, c.getNom(), odd);
+                addDataCell(table, c.getTelephone(), odd);
+                addDataCell(table, c.getEmail(), odd);
+                addDataCell(table, c.getDateInscription() != null ? c.getDateInscription().toString() : "", odd);
+                odd = !odd;
             }
             doc.add(table);
             doc.close();
@@ -160,5 +188,29 @@ public class ClientController {
         if (value == null) return "";
         String escaped = value.replace("\"", "\"\"");
         return "\"" + escaped + "\"";
+    }
+
+    private void styleHeaderRow(PdfPTable table, BaseColor bgColor) {
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+        for (int i = 0; i < table.getNumberOfColumns(); i++) {
+            PdfPCell old = table.getRow(0).getCells()[i];
+            PdfPCell header = new PdfPCell(new Phrase(old.getPhrase().getContent(), headerFont));
+            header.setBackgroundColor(bgColor);
+            header.setBorder(Rectangle.NO_BORDER);
+            header.setPadding(8f);
+            table.getRow(0).getCells()[i] = header;
+        }
+    }
+
+    private void addDataCell(PdfPTable table, String value, boolean oddRow) {
+        Font rowFont = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, new BaseColor(31, 41, 55));
+        PdfPCell cell = new PdfPCell(new Phrase(value != null ? value : "", rowFont));
+        cell.setPadding(7f);
+        cell.setBorder(Rectangle.BOTTOM);
+        cell.setBorderColor(new BaseColor(229, 231, 235));
+        if (oddRow) {
+            cell.setBackgroundColor(new BaseColor(249, 250, 251));
+        }
+        table.addCell(cell);
     }
 }
