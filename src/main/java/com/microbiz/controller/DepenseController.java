@@ -59,8 +59,9 @@ public class DepenseController {
         model.addAttribute("depensesMois",  depenseService.getDepensesDuMois());
         model.addAttribute("parCategorie",  depenseService.getDepensesParCategorie());
         model.addAttribute("totalFiltre",   totalFiltre);
-        model.addAttribute("devises", List.of("XAF", "EUR", "USD", "GNF"));
+        model.addAttribute("devises", currencyRateService.getSupportedCurrencies());
         model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
+        model.addAttribute("ratesToBase", currencyRateService.getRatesToBase());
         return "depenses";
     }
 
@@ -70,15 +71,18 @@ public class DepenseController {
             ra.addFlashAttribute("erreur", "Le montant doit être positif.");
             return "redirect:/depenses";
         }
-        if (depense.getDevise() == null || depense.getDevise().isBlank()) {
-            depense.setDevise("XAF");
-        }
+        String deviseNormalisee = currencyRateService.normalizeCurrency(depense.getDevise());
+        depense.setMontant(currencyRateService.fromBase(
+                currencyRateService.toBase(depense.getMontant(), deviseNormalisee),
+                deviseNormalisee
+        ));
+        depense.setDevise(deviseNormalisee);
         depense.setTenantKey(TenantContext.getTenant());
         depenseService.save(depense);
         ra.addFlashAttribute("succes",
                 "Dépense de "
                         + String.format("%,.0f", depense.getMontant()).replace(',', ' ')
-                        + " FCFA enregistrée !");
+                        + " " + depense.getDevise() + " enregistrée !");
         return "redirect:/depenses";
     }
 

@@ -1,6 +1,5 @@
 package com.microbiz.service;
 
-import com.microbiz.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,8 +11,6 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class StatistiqueService {
 
-    @Autowired private VenteRepository   venteRepository;
-    @Autowired private DepenseRepository depenseRepository;
     @Autowired private VenteService venteService;
     @Autowired private DepenseService depenseService;
     @Autowired private CurrencyRateService currencyRateService;
@@ -61,11 +58,13 @@ public class StatistiqueService {
         String[] mois = {"Jan","Fev","Mar","Avr","Mai","Jun",
                 "Jul","Aou","Sep","Oct","Nov","Dec"};
         Map<String, Double> result = new LinkedHashMap<>();
-        for (Object[] row : venteRepository.getEvolutionMensuelle()) {
-            int m  = ((Number) row[0]).intValue();
-            int y  = ((Number) row[1]).intValue();
-            double ca = ((Number) row[2]).doubleValue();
-            result.put(mois[m - 1] + " " + y, ca);
+        for (var vente : venteService.findAll()) {
+            if (vente.getDateVente() == null) continue;
+            int m = vente.getDateVente().getMonthValue();
+            int y = vente.getDateVente().getYear();
+            String key = mois[m - 1] + " " + y;
+            double caBase = currencyRateService.toBase(vente.getMontantTotal(), vente.getDevise());
+            result.put(key, result.getOrDefault(key, 0.0) + caBase);
         }
         return result;
     }
@@ -73,12 +72,15 @@ public class StatistiqueService {
     /** AMÉLIORATION 1 : Evolution HEBDOMADAIRE — n dernières semaines */
     public Map<String, Double> getEvolutionHebdomadaire(int nbSemaines) {
         LocalDate depuis = LocalDate.now().minusWeeks(nbSemaines);
+        WeekFields wf = WeekFields.ISO;
         Map<String, Double> result = new LinkedHashMap<>();
-        for (Object[] row : venteRepository.getEvolutionHebdomadaire(depuis)) {
-            int sem   = ((Number) row[0]).intValue();
-            int annee = ((Number) row[1]).intValue();
-            double ca = ((Number) row[2]).doubleValue();
-            result.put("S" + sem + "/" + annee, ca);
+        for (var vente : venteService.findAll()) {
+            if (vente.getDateVente() == null || vente.getDateVente().isBefore(depuis)) continue;
+            int sem = vente.getDateVente().get(wf.weekOfWeekBasedYear());
+            int annee = vente.getDateVente().getYear();
+            String key = "S" + sem + "/" + annee;
+            double caBase = currencyRateService.toBase(vente.getMontantTotal(), vente.getDevise());
+            result.put(key, result.getOrDefault(key, 0.0) + caBase);
         }
         return result;
     }
@@ -86,11 +88,11 @@ public class StatistiqueService {
     /** Évolution SEMESTRIELLE (S1/S2) à partir des données mensuelles */
     public Map<String, Double> getEvolutionSemestrielle() {
         Map<String, Double> result = new LinkedHashMap<>();
-        for (Object[] row : venteRepository.getEvolutionMensuelle()) {
-            int mois = ((Number) row[0]).intValue();
-            int annee = ((Number) row[1]).intValue();
-            double ca = ((Number) row[2]).doubleValue();
-
+        for (var vente : venteService.findAll()) {
+            if (vente.getDateVente() == null) continue;
+            int mois = vente.getDateVente().getMonthValue();
+            int annee = vente.getDateVente().getYear();
+            double ca = currencyRateService.toBase(vente.getMontantTotal(), vente.getDevise());
             String semestre = mois <= 6 ? "S1 " + annee : "S2 " + annee;
             result.put(semestre, result.getOrDefault(semestre, 0.0) + ca);
         }
@@ -100,7 +102,7 @@ public class StatistiqueService {
     public Map<String, Double> getEvolutionParFiltre(String periode, LocalDate debut, LocalDate fin) {
         Map<String, Double> result = new LinkedHashMap<>();
         WeekFields wf = WeekFields.ISO;
-        for (var vente : venteRepository.findByDateVenteBetweenOrderByDateVenteDesc(debut, fin)) {
+        for (var vente : venteService.getVentesParPeriode(debut, fin)) {
             if (vente.getDateVente() == null) continue;
             String key;
             LocalDate d = vente.getDateVente();

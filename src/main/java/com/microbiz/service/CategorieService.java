@@ -23,10 +23,8 @@ public class CategorieService {
         if (nom == null || nom.isBlank()) {
             return null;
         }
-        String normalized = nom.trim();
-        if (normalized.length() > 120) {
-            normalized = normalized.substring(0, 120);
-        }
+        String trimmed = nom.trim();
+        final String normalized = trimmed.length() > 120 ? trimmed.substring(0, 120) : trimmed;
         return categorieRepository.findByNomIgnoreCase(normalized)
                 .map(Categorie::getNom)
                 .orElseGet(() -> categorieRepository.save(Categorie.builder().nom(normalized).build()).getNom());

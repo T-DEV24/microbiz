@@ -50,7 +50,7 @@ public class FactureController {
         model.addAttribute("debut", debut);
         model.addAttribute("fin", fin);
         model.addAttribute("size", pageable.getPageSize());
-        model.addAttribute("devises", java.util.List.of("XAF", "EUR", "USD", "GNF"));
+        model.addAttribute("devises", currencyRateService.getSupportedCurrencies());
         model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
         return "factures";
     }

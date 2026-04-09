@@ -38,7 +38,9 @@ public class VenteService {
     public Optional<Vente> findById(Long id) { return venteRepository.findById(id); }
 
     public List<Vente> getVentesRecentes() {
-        return venteRepository.findTop20ByOrderByDateVenteDesc();
+        return findAll().stream()
+                .limit(20)
+                .toList();
     }
 
     public Page<Vente> getVentesFiltrees(LocalDate debut, LocalDate fin, String q, Pageable pageable) {
@@ -72,7 +74,10 @@ public class VenteService {
     }
 
     public long getNbTransactionsDuJour() {
-        return venteRepository.countByDateVente(LocalDate.now());
+        LocalDate now = LocalDate.now();
+        return findAll().stream()
+                .filter(v -> now.equals(v.getDateVente()))
+                .count();
     }
 
     /** Enregistrer une vente ET décrémenter le stock */
@@ -115,8 +120,8 @@ public class VenteService {
 
     public List<Map<String, Object>> getTopProduits(int n, LocalDate debut, LocalDate fin) {
         List<Vente> ventes = (debut != null && fin != null)
-                ? venteRepository.findByDateVenteBetweenOrderByDateVenteDesc(debut, fin)
-                : venteRepository.findAllByOrderByDateVenteDesc();
+                ? getVentesParPeriode(debut, fin)
+                : findAll();
 
         Map<Produit, long[]> quantites = new LinkedHashMap<>();
         Map<Produit, Double> caConsolide = new LinkedHashMap<>();

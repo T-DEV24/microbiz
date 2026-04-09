@@ -19,9 +19,9 @@
         .sidebar .nav-link i { width:18px; text-align:center; font-size:15px; }
         .nav-section { font-size:10px; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.08em; padding:14px 16px 4px; }
         .main { margin-left:240px; min-height:100vh; }
-        .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:14px 28px; position:sticky; top:0; z-index:50; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:#fff; border-bottom:1px solid #e5e7eb; padding:14px 28px; position:sticky; top:0; z-index:50; }
         .metric-card { background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:20px; }
-        .chart-card { background:#fff; border-radius:12px; border:1px solid #e5e7eb; overflow:hidden; }
+        .chart-card { background:#fff; border-radius:12px; border:1px solid #e5e7eb; overflow-x:auto; }
         .chart-card .card-header { background:transparent; border-bottom:1px solid #f3f4f6; padding:14px 18px; font-weight:600; font-size:13px; color:#111827; }
         .kpi-box { background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:20px; text-align:center; }
         .kpi-num { font-size:32px; font-weight:600; font-family:'DM Mono',monospace; }
@@ -36,23 +36,59 @@
         .delta { font-size:11px; font-weight:600; }
         .delta.up { color:#059669; }
         .delta.down { color:#dc2626; }
-    </style>
+    
+    .mobile-nav { display:none; }
+    .mobile-nav-toggle { border:1px solid #d1d5db; background:#fff; color:#111827; border-radius:10px; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; }
+    .sidebar-overlay { display:none; }
+    @media (max-width: 992px) {
+      body.sidebar-open { overflow:hidden; }
+      .mobile-nav { display:flex; position:sticky; top:0; z-index:120; background:#fff; border-bottom:1px solid #e5e7eb; padding:10px 14px; align-items:center; justify-content:space-between; }
+      .mobile-brand { display:flex; align-items:center; gap:10px; font-weight:600; color:#111827; font-size:14px; }
+      .mobile-brand-logo { width:28px; height:28px; background:#3b82f6; color:#fff; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
+      .sidebar { transform:translateX(-100%); transition:transform .25s ease; width:min(86vw, 320px); }
+      body.sidebar-open .sidebar { transform:translateX(0); box-shadow:0 0 0 9999px rgba(15,17,23,.35); }
+      .sidebar-overlay { display:block; position:fixed; inset:0; background:rgba(15,17,23,.45); opacity:0; visibility:hidden; transition:opacity .25s ease; z-index:90; }
+      body.sidebar-open .sidebar-overlay { opacity:1; visibility:visible; }
+      .main { margin-left:0; min-height:100vh; }
+      .topbar { padding:12px 14px; }
+      .topbar > * { min-width:0; }
+      .topbar-actions--stack { width:100%; display:flex; flex-wrap:wrap; gap:8px; }
+    }
+
+  </style>
   <link th:href="@{/css/style.css}" rel="stylesheet">
 </head>
 <body>
-<aside class="sidebar">
+<div class="mobile-nav">
+    <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Ouvrir le menu" aria-controls="sidebarMenu" aria-expanded="false">
+        <i class="bi bi-list fs-5"></i>
+    </button>
+    <div class="mobile-brand"><span class="mobile-brand-logo">◈</span> MicroBiz Pro</div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="sidebar" id="sidebarMenu">
     <div class="p-3 border-bottom" style="border-color:rgba(255,255,255,.07)!important"><div class="d-flex align-items-center gap-2"><div style="width:36px;height:36px;background:#3b82f6;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0">◈</div><div><div style="font-size:14px;font-weight:600;color:#fff">MicroBiz Pro</div><div style="font-size:11px;color:rgba(255,255,255,.4)">Statistiques</div></div></div></div>
     <nav class="flex-grow-1 py-2">
-        <div class="nav-section">Principal</div>
-        <a href="/dashboard" class="nav-link"><i class="bi bi-grid-fill"></i> Dashboard</a>
-        <a href="/ventes" class="nav-link"><i class="bi bi-bag-check"></i> Ventes</a>
-        <a href="/produits" class="nav-link"><i class="bi bi-box-seam"></i> Produits</a>
-        <a href="/clients" class="nav-link"><i class="bi bi-people"></i> Clients</a>
-        <div class="nav-section">Finance</div>
-        <a href="/depenses" class="nav-link"><i class="bi bi-credit-card"></i> Dépenses</a>
-        <a href="/factures" class="nav-link"><i class="bi bi-receipt"></i> Factures</a>
-        <a href="/statistiques" class="nav-link active"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
-    </nav>
+    <div class="nav-section">Principal</div>
+    <a href="/dashboard" class="nav-link" th:classappend="${active} == 'dashboard' ? ' active' : ''"><i class="bi bi-grid-fill"></i> Dashboard</a>
+    <a href="/ventes" class="nav-link" th:classappend="${active} == 'ventes' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER','COMMERCIAL')"><i class="bi bi-bag-check"></i> Ventes</a>
+    <a href="/produits" class="nav-link" th:classappend="${active} == 'produits' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER','COMMERCIAL')"><i class="bi bi-box-seam"></i> Produits</a>
+    <a href="/clients" class="nav-link" th:classappend="${active} == 'clients' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER','COMMERCIAL')"><i class="bi bi-people"></i> Clients</a>
+    <a href="/fournisseurs" class="nav-link" th:classappend="${active} == 'fournisseurs' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-truck"></i> Fournisseurs</a>
+    <a href="/mouvements-stock" class="nav-link" th:classappend="${active} == 'mouvements-stock' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-arrow-left-right"></i> Mouvements stock</a>
+    <a href="/entreprise" class="nav-link" th:classappend="${active} == 'entreprise' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-building"></i> Entreprise</a>
+    <a href="/devises" class="nav-link" th:classappend="${active} == 'devises' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-currency-exchange"></i> Devises</a>
+    <div class="nav-section">Finance</div>
+    <a href="/depenses" class="nav-link" th:classappend="${active} == 'depenses' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-credit-card"></i> Dépenses</a>
+    <a href="/factures" class="nav-link" th:classappend="${active} == 'factures' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-receipt"></i> Factures</a>
+    <a href="/statistiques" class="nav-link" th:classappend="${active} == 'statistiques' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER','COMMERCIAL')"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
+    <a href="/comptabilite/ohada" class="nav-link" th:classappend="${active} == 'ohada' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-journal-text"></i> Compta OHADA</a>
+    <div class="nav-section" sec:authorize="hasRole('ADMIN')">Système</div>
+    <a href="/utilisateurs" class="nav-link" th:classappend="${active} == 'utilisateurs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-shield-lock"></i> Utilisateurs</a>
+    <a href="/audit-logs" class="nav-link" th:classappend="${active} == 'audit-logs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-journal-check"></i> Audit logs</a>
+    <a href="/saas/admin" class="nav-link" th:classappend="${active} == 'saas-admin' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-hdd-network"></i> SaaS Admin</a>
+    <a href="/swagger-ui/index.html" class="nav-link" sec:authorize="hasRole('ADMIN')"><i class="bi bi-code-slash"></i> API Docs</a>
+  </nav>
     <div class="p-3" style="border-top:1px solid rgba(255,255,255,.07)"><div class="d-flex align-items-center gap-2"><div class="user-avatar" th:text="${#strings.substring(#authentication.name,0,1).toUpperCase()}" sec:authentication="name">A</div><div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:500;color:#fff" sec:authentication="name">Admin</div><div style="font-size:11px;color:rgba(255,255,255,.4)">Connecté</div></div><form th:action="@{/logout}" method="post"><button type="submit" class="btn btn-sm border-0 p-1" style="color:rgba(255,255,255,.4);background:none"><i class="bi bi-box-arrow-right" style="font-size:16px"></i></button></form></div></div>
 </aside>
 
@@ -62,7 +98,7 @@
             <h1 class="h5 mb-0 fw-semibold">Statistiques</h1>
             <div class="text-muted" style="font-size:12px">Indicateurs filtrables + comparaison N/N-1</div>
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 topbar-actions--stack">
             <a th:href="@{/statistiques/export.csv(periode=${periode},top=${top},debut=${debut},fin=${fin})}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
             <a th:href="@{/statistiques/export-pdf(periode=${periode},top=${top},debut=${debut},fin=${fin})}" class="btn btn-danger btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
         </div>
@@ -136,13 +172,17 @@
     const beneficeVal = /*[[${benefice}]]*/ 0;
     const depensesVal = /*[[${depenses}]]*/ 0;
     const caTotalVal = /*[[${caTotal}]]*/ 0;
+    const devisePrincipale = /*[[${devisePrincipale}]]*/ 'XAF';
 </script>
 <script>
     const gridColor = 'rgba(0,0,0,.05)';
     const tickColor = '#9ca3af';
-    new Chart(document.getElementById('chartCA'), {type: 'line', data: {labels: Object.keys(evolutionCA), datasets: [{label: 'CA (FCFA)', data: Object.values(evolutionCA), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.08)', fill: true, tension: .4, pointRadius: 5, pointBackgroundColor: '#3b82f6', borderWidth: 2}]}, options: {responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: {x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } }}}});
+    new Chart(document.getElementById('chartCA'), {type: 'line', data: {labels: Object.keys(evolutionCA), datasets: [{label: 'CA (' + devisePrincipale + ')', data: Object.values(evolutionCA), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.08)', fill: true, tension: .4, pointRadius: 5, pointBackgroundColor: '#3b82f6', borderWidth: 2}]}, options: {responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: {x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } }}}});
     new Chart(document.getElementById('chartDep'), {type: 'doughnut', data: {labels: Object.keys(depensesCateg), datasets: [{data: Object.values(depensesCateg), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'], borderWidth: 0}]}, options: {responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, boxWidth: 10 } } }}});
     new Chart(document.getElementById('chartBen'), {type: 'bar', data: {labels: ['Synthèse financière'], datasets: [{ label: 'CA', data: [caTotalVal], backgroundColor: 'rgba(59,130,246,.7)', borderRadius: 6 },{ label: 'Dépenses', data: [depensesVal], backgroundColor: 'rgba(220,38,38,.7)', borderRadius: 6 },{ label: 'Bénéfice', data: [beneficeVal], backgroundColor: 'rgba(16,185,129,.7)', borderRadius: 6 }]}, options: {responsive: true, maintainAspectRatio: false}});
 </script>
+
+
+<script th:src="@{/js/mobile-nav.js}"></script>
 </body>
 </html>

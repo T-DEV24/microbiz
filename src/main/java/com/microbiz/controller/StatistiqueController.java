@@ -7,6 +7,7 @@ import com.microbiz.service.RapportService;
 import com.microbiz.service.StatistiqueService;
 import com.microbiz.service.VenteService;
 import com.microbiz.service.PredictiveSalesService;
+import com.microbiz.service.CurrencyRateService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -35,6 +36,7 @@ public class StatistiqueController {
     @Autowired private ClientService clientService;
     @Autowired private RapportService rapportService;
     @Autowired private PredictiveSalesService predictiveSalesService;
+    @Autowired private CurrencyRateService currencyRateService;
 
     @GetMapping
     public String statistiques(@RequestParam(defaultValue = "mois") String periode,
@@ -93,6 +95,7 @@ public class StatistiqueController {
         model.addAttribute("debut", debut);
         model.addAttribute("fin", fin);
         model.addAttribute("previsionsVentes", predictiveSalesService.previsionMensuelle(3));
+        model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
 
         if (debut != null && fin != null) {
             LocalDate previousEnd = debut.minusDays(1);
