@@ -56,6 +56,8 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
+                                "/service-worker.js",
+                                "/manifest.webmanifest",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/favicon.ico",
@@ -63,13 +65,27 @@ public class SecurityConfig {
                         ).permitAll()
                         // Routes ADMIN uniquement
                         .requestMatchers("/utilisateurs/**", "/audit-logs/**", "/saas/admin/**").hasRole("ADMIN")
-                        // ROLE_COMMERCIAL : accès complet ventes/clients
-                        .requestMatchers("/ventes/**", "/clients/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
-                        // ROLE_COMMERCIAL : pas d'accès aux dépenses
-                        .requestMatchers("/depenses/**").hasAnyRole("ADMIN", "USER")
+                        // Accès commun métier (ADMIN + USER)
+                        .requestMatchers(
+                                "/depenses/**",
+                                "/factures/**",
+                                "/fournisseurs/**",
+                                "/mouvements-stock/**",
+                                "/comptabilite/ohada/**",
+                                "/entreprise/**",
+                                "/devises/**",
+                                "/api/v1/factures/**",
+                                "/api/v1/fournisseurs/**",
+                                "/api/v1/stock-alertes/**",
+                                "/api/v1/achats/**"
+                        ).hasAnyRole("ADMIN", "USER")
+                        // ROLE_COMMERCIAL : accès ventes/clients/produits
+                        .requestMatchers("/ventes/**", "/clients/**", "/produits/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
                         // ROLE_COMMERCIAL : stats en lecture seule
                         .requestMatchers(HttpMethod.GET, "/statistiques/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
                         .requestMatchers(HttpMethod.POST, "/statistiques/**").hasAnyRole("ADMIN", "USER")
+                        // Dashboard connecté
+                        .requestMatchers("/", "/dashboard").authenticated()
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )
