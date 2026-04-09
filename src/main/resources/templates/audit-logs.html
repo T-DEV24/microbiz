@@ -24,6 +24,15 @@
         </div>
     </div>
     <div class="content">
+        <form th:action="@{/audit-logs}" method="get" style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+            <label style="font-size:12px;color:#6b7280">Taille</label>
+            <select name="size" style="border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;font-size:12px">
+                <option th:selected="${size == 10}" value="10">10</option>
+                <option th:selected="${size == 20}" value="20">20</option>
+                <option th:selected="${size == 50}" value="50">50</option>
+            </select>
+            <button type="submit" class="action-btn btn-edit">Appliquer</button>
+        </form>
         <div class="card">
             <div class="card-header">
                 <div class="card-title" th:text="${logsPage.totalElements} + ' événements'">0 événements</div>
@@ -53,9 +62,9 @@
                 </table>
                 <div style="display:flex;justify-content:space-between;margin-top:12px" th:if="${logsPage.totalPages > 1}">
                     <a class="action-btn btn-edit" th:if="${logsPage.hasPrevious()}"
-                       th:href="@{/audit-logs(page=${logsPage.number-1},size=${logsPage.size})}">Précédent</a>
+                       th:href="@{/audit-logs(page=${logsPage.number-1},size=${size})}">Précédent</a>
                     <a class="action-btn btn-edit" th:if="${logsPage.hasNext()}"
-                       th:href="@{/audit-logs(page=${logsPage.number+1},size=${logsPage.size})}">Suivant</a>
+                       th:href="@{/audit-logs(page=${logsPage.number+1},size=${size})}">Suivant</a>
                 </div>
             </div>
         </div>
