@@ -5,7 +5,6 @@ import com.microbiz.security.TenantContext;
 import com.microbiz.repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,43 +19,36 @@ public class VenteService {
     @Autowired private ProduitRepository produitRepository;
     @Autowired private CurrencyRateService currencyRateService;
     @Autowired private EmailNotificationService emailNotificationService;
+    @org.springframework.beans.factory.annotation.Value("${microbiz.stock-alert.threshold:10}")
+    private int stockAlertThreshold;
 
     public List<Vente> findAll()   {
         String tenant = TenantContext.getTenant();
-        return venteRepository.findAllByOrderByDateVenteDesc().stream()
-                .filter(v -> tenant.equals(v.getTenantKey()))
-                .toList();
+        return venteRepository.findAllByTenantKeyOrderByDateVenteDesc(tenant);
     }
-    public long countAll()         { return venteRepository.count(); }
+    public long countAll()         { return venteRepository.countByTenantKey(TenantContext.getTenant()); }
 
     public long countAll(LocalDate debut, LocalDate fin) {
+        String tenant = TenantContext.getTenant();
         if (debut != null && fin != null) {
-            return venteRepository.countByDateVenteBetween(debut, fin);
+            return venteRepository.countByTenantKeyAndDateVenteBetween(tenant, debut, fin);
         }
-        return venteRepository.count();
+        return venteRepository.countByTenantKey(tenant);
     }
-    public Optional<Vente> findById(Long id) { return venteRepository.findById(id); }
+    public Optional<Vente> findById(Long id) { return venteRepository.findByIdAndTenantKey(id, TenantContext.getTenant()); }
 
     public List<Vente> getVentesRecentes() {
-        return findAll().stream()
-                .limit(20)
-                .toList();
+        return venteRepository.findTop20ByTenantKeyOrderByDateVenteDesc(TenantContext.getTenant());
     }
 
     public Page<Vente> getVentesFiltrees(LocalDate debut, LocalDate fin, String q, Pageable pageable) {
         String tenant = TenantContext.getTenant();
-        Page<Vente> page = venteRepository.findByFiltres(debut, fin, q, pageable);
-        List<Vente> filtered = page.getContent().stream()
-                .filter(v -> tenant.equals(v.getTenantKey()))
-                .toList();
-        return new PageImpl<>(filtered, pageable, filtered.size());
+        return venteRepository.findByFiltres(tenant, debut, fin, q, pageable);
     }
 
     public List<Vente> getVentesParPeriode(LocalDate debut, LocalDate fin) {
         String tenant = TenantContext.getTenant();
-        return venteRepository.findByDateVenteBetweenOrderByDateVenteDesc(debut, fin).stream()
-                .filter(v -> tenant.equals(v.getTenantKey()))
-                .toList();
+        return venteRepository.findByTenantKeyAndDateVenteBetweenOrderByDateVenteDesc(tenant, debut, fin);
     }
 
     public Double getCAParPeriode(LocalDate debut, LocalDate fin) {
@@ -67,17 +59,14 @@ public class VenteService {
 
     public Double getCADuJour() {
         LocalDate now = LocalDate.now();
-        return findAll().stream()
-                .filter(v -> now.equals(v.getDateVente()))
+        return getVentesParPeriode(now, now).stream()
                 .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
                 .sum();
     }
 
     public long getNbTransactionsDuJour() {
         LocalDate now = LocalDate.now();
-        return findAll().stream()
-                .filter(v -> now.equals(v.getDateVente()))
-                .count();
+        return venteRepository.countByTenantKeyAndDateVente(TenantContext.getTenant(), now);
     }
 
     /** Enregistrer une vente ET décrémenter le stock */
@@ -95,7 +84,7 @@ public class VenteService {
         int nouveauStock = stockActuel - quantite;
         p.setStockActuel(nouveauStock);
         produitRepository.save(p);
-        if (stockActuel > 10 && nouveauStock <= 10) {
+        if (stockActuel > stockAlertThreshold && nouveauStock <= stockAlertThreshold) {
             emailNotificationService.sendStockBas(List.of(p));
         }
         return venteRepository.save(vente);
@@ -103,7 +92,7 @@ public class VenteService {
 
     /** Supprimer une vente ET restaurer le stock — AMÉLIORATION 2 */
     public void supprimerVente(Long id) {
-        Vente vente = venteRepository.findById(id)
+        Vente vente = venteRepository.findByIdAndTenantKey(id, TenantContext.getTenant())
                 .orElseThrow(() -> new RuntimeException("Vente introuvable."));
         // Restaurer le stock avant suppression
         Produit p = vente.getProduit();

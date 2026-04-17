@@ -19,6 +19,7 @@ public class DashboardController {
     @Autowired private ProduitService     produitService;
     @Autowired private DepenseService     depenseService;
     @Autowired private CurrencyRateService currencyRateService;
+    @Autowired private PredictiveSalesService predictiveSalesService;
 
     @GetMapping({"/", "/dashboard"})
     public String dashboard(
@@ -49,6 +50,7 @@ public class DashboardController {
         model.addAttribute("topProduits",        venteService.getTopProduits(5));
         model.addAttribute("ventesRecentes",     venteService.getVentesRecentes());
         model.addAttribute("stockBas",           produitService.getProduitsStockBas());
+        model.addAttribute("previsionsVentes",   predictiveSalesService.previsionMensuelle(3));
 
         return "dashboard";
     }
