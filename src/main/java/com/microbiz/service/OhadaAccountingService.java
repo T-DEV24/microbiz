@@ -58,6 +58,13 @@ public class OhadaAccountingService {
             case "loyer" -> "622000";
             case "transport" -> "624000";
             case "electricite" -> "606100";
+            case "eau" -> "606300";
+            case "internet", "telecom", "télécom" -> "626000";
+            case "marketing", "publicite", "publicité" -> "623000";
+            case "maintenance", "entretien" -> "612200";
+            case "impots", "impôts", "taxes" -> "646000";
+            case "assurance" -> "616000";
+            case "frais bancaires" -> "627000";
             default -> "600000";
         };
     }
