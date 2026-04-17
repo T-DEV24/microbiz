@@ -35,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
                     .email("admin@microbiz.com")
                     .motDePasse(passwordEncoder.encode(adminPassword))  // hache !
                     .role("ROLE_ADMIN")
+                    .tenantKey("default")
                     .build();
             utilisateurRepo.save(admin);
             Utilisateur user = Utilisateur.builder()
@@ -42,6 +43,7 @@ public class DataInitializer implements CommandLineRunner {
                     .email("jean@microbiz.com")
                     .motDePasse(passwordEncoder.encode(userPassword))
                     .role("ROLE_USER")
+                    .tenantKey("default")
                     .build();
             utilisateurRepo.save(user);
             Utilisateur commercial = Utilisateur.builder()
@@ -49,6 +51,7 @@ public class DataInitializer implements CommandLineRunner {
                     .email("commercial@microbiz.com")
                     .motDePasse(passwordEncoder.encode(userPassword))
                     .role("ROLE_COMMERCIAL")
+                    .tenantKey("default")
                     .build();
             utilisateurRepo.save(commercial);
             System.out.println("  ADMIN -> admin@microbiz.com / [mot de passe via variable d'environnement]");
@@ -65,16 +68,16 @@ public class DataInitializer implements CommandLineRunner {
             }
             produitRepo.save(Produit.builder().nom("Jus de gingembre")
                     .categorie("Boissons").prixVente(600.0)
-                    .coutRevient(250.0).stockActuel(50).build());
+                    .coutRevient(250.0).stockActuel(50).tenantKey("default").build());
             produitRepo.save(Produit.builder().nom("Jus de bissap")
                     .categorie("Boissons").prixVente(600.0)
-                    .coutRevient(220.0).stockActuel(40).build());
+                    .coutRevient(220.0).stockActuel(40).tenantKey("default").build());
             produitRepo.save(Produit.builder().nom("Jus de tamarin")
                     .categorie("Boissons").prixVente(600.0)
-                    .coutRevient(230.0).stockActuel(8).build());
+                    .coutRevient(230.0).stockActuel(8).tenantKey("default").build());
             produitRepo.save(Produit.builder().nom("Eau de coco")
                     .categorie("Boissons").prixVente(600.0)
-                    .coutRevient(280.0).stockActuel(5).build());
+                    .coutRevient(280.0).stockActuel(5).tenantKey("default").build());
         }
         // Clients de demo
         if (clientRepo.count() == 0) {
