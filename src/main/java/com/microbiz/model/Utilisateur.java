@@ -23,6 +23,16 @@ public class Utilisateur {
     // ROLE_ADMIN  ou  ROLE_USER
     @NotBlank
     private String role;
+
+    @Column(name = "tenant_key", nullable = false)
+    private String tenantKey = "default";
+
+    @PrePersist
+    public void prePersist() {
+        if (tenantKey == null || tenantKey.isBlank()) {
+            tenantKey = "default";
+        }
+    }
     public boolean isAdmin() {
         return "ROLE_ADMIN".equals(role);
     }

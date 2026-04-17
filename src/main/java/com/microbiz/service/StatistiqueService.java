@@ -1,5 +1,7 @@
 package com.microbiz.service;
 
+import com.microbiz.repository.VenteRepository;
+import com.microbiz.security.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,20 +14,24 @@ import java.util.*;
 public class StatistiqueService {
 
     @Autowired private VenteService venteService;
+    @Autowired private VenteRepository venteRepository;
     @Autowired private DepenseService depenseService;
     @Autowired private CurrencyRateService currencyRateService;
 
     public Double getChiffreAffairesTotal() {
-        return venteService.findAll().stream()
-                .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
+        String tenant = TenantContext.getTenant();
+        return venteRepository.sumByDevise(tenant).stream()
+                .mapToDouble(row -> currencyRateService.toBase(((Number) row[1]).doubleValue(), (String) row[0]))
                 .sum();
     }
 
     public Double getChiffreAffairesDuMois() {
         int month = LocalDate.now().getMonthValue();
         int year = LocalDate.now().getYear();
-        return venteService.findAll().stream()
-                .filter(v -> v.getDateVente() != null && v.getDateVente().getMonthValue() == month && v.getDateVente().getYear() == year)
+        return venteService.getVentesParPeriode(
+                        LocalDate.of(year, month, 1),
+                        LocalDate.of(year, month, 1).withDayOfMonth(LocalDate.of(year, month, 1).lengthOfMonth())
+                ).stream()
                 .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
                 .sum();
     }
@@ -55,15 +61,15 @@ public class StatistiqueService {
 
     /** AMÉLIORATION 1 : Evolution MENSUELLE */
     public Map<String, Double> getEvolutionMensuelle() {
-        String[] mois = {"Jan","Fev","Mar","Avr","Mai","Jun",
-                "Jul","Aou","Sep","Oct","Nov","Dec"};
         Map<String, Double> result = new LinkedHashMap<>();
-        for (var vente : venteService.findAll()) {
-            if (vente.getDateVente() == null) continue;
-            int m = vente.getDateVente().getMonthValue();
-            int y = vente.getDateVente().getYear();
+        String[] mois = {"Jan","Fev","Mar","Avr","Mai","Jun","Jul","Aou","Sep","Oct","Nov","Dec"};
+        for (Object[] row : venteRepository.sumByMonthAndDevise(TenantContext.getTenant(), null, null)) {
+            int y = ((Number) row[0]).intValue();
+            int m = ((Number) row[1]).intValue();
+            String devise = (String) row[2];
+            double montant = ((Number) row[3]).doubleValue();
             String key = mois[m - 1] + " " + y;
-            double caBase = currencyRateService.toBase(vente.getMontantTotal(), vente.getDevise());
+            double caBase = currencyRateService.toBase(montant, devise);
             result.put(key, result.getOrDefault(key, 0.0) + caBase);
         }
         return result;
@@ -74,7 +80,7 @@ public class StatistiqueService {
         LocalDate depuis = LocalDate.now().minusWeeks(nbSemaines);
         WeekFields wf = WeekFields.ISO;
         Map<String, Double> result = new LinkedHashMap<>();
-        for (var vente : venteService.findAll()) {
+        for (var vente : venteService.getVentesParPeriode(depuis, LocalDate.now())) {
             if (vente.getDateVente() == null || vente.getDateVente().isBefore(depuis)) continue;
             int sem = vente.getDateVente().get(wf.weekOfWeekBasedYear());
             int annee = vente.getDateVente().getYear();

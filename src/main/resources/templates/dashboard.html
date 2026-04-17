@@ -394,6 +394,31 @@
       </div>
     </div>
 
+    <div class="row g-3 mb-4">
+      <div class="col-12">
+        <div class="chart-card">
+          <div class="card-header">
+            <i class="bi bi-graph-up-arrow me-2 text-success"></i>Prévisions ventes (3 mois)
+          </div>
+          <div class="p-3">
+            <div class="row g-2" th:if="${previsionsVentes != null and !#maps.isEmpty(previsionsVentes)}">
+              <div class="col-md-4" th:each="entry : ${previsionsVentes}">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-muted" style="font-size:12px" th:text="${entry.key}">2026-01</div>
+                  <div style="font-size:20px;font-weight:600;font-family:'DM Mono',monospace"
+                       th:text="${#numbers.formatDecimal(entry.value,0,'COMMA',0,'POINT')} + ' F'">0 F</div>
+                </div>
+              </div>
+            </div>
+            <div class="text-muted" style="font-size:13px"
+                 th:if="${previsionsVentes == null or #maps.isEmpty(previsionsVentes)}">
+              Prévisions indisponibles (historique insuffisant).
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- TOP PRODUITS + VENTES RÉCENTES -->
     <div class="row g-3">
 

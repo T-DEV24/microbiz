@@ -3,7 +3,6 @@ import com.microbiz.model.Utilisateur;
 import com.microbiz.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,9 +25,10 @@ public class CustomUserDetailsService implements UserDetailsService {
         SimpleGrantedAuthority authority =
                 new SimpleGrantedAuthority(utilisateur.getRole());
         // 3. Retourner un UserDetails que Spring Security comprend
-        return new User(
+        return new AuthenticatedUser(
                 utilisateur.getEmail(),
                 utilisateur.getMotDePasse(),   // deja hache en BCrypt
+                utilisateur.getTenantKey(),
                 Collections.singletonList(authority)
         );
     }
