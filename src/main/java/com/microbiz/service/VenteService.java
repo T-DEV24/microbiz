@@ -3,6 +3,7 @@ package com.microbiz.service;
 import com.microbiz.model.*;
 import com.microbiz.security.TenantContext;
 import com.microbiz.repository.*;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -70,6 +71,7 @@ public class VenteService {
     }
 
     /** Enregistrer une vente ET décrémenter le stock */
+    @CacheEvict(cacheNames = {"stats_ca_total", "stats_evolution_mensuelle"}, allEntries = true)
     public Vente enregistrerVente(Vente vente) {
         Produit p = vente.getProduit();
         int stockActuel = p.getStockActuel() == null ? 0 : p.getStockActuel();
@@ -91,6 +93,7 @@ public class VenteService {
     }
 
     /** Supprimer une vente ET restaurer le stock — AMÉLIORATION 2 */
+    @CacheEvict(cacheNames = {"stats_ca_total", "stats_evolution_mensuelle"}, allEntries = true)
     public void supprimerVente(Long id) {
         Vente vente = venteRepository.findByIdAndTenantKey(id, TenantContext.getTenant())
                 .orElseThrow(() -> new RuntimeException("Vente introuvable."));
