@@ -39,9 +39,11 @@ public class FactureService {
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.BROUILLON,
                 EnumSet.of(Facture.StatutFacture.ENVOYEE, Facture.StatutFacture.ANNULEE));
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.ENVOYEE,
+                EnumSet.of(Facture.StatutFacture.PAIEMENT_PARTIEL, Facture.StatutFacture.PAYEE, Facture.StatutFacture.IMPAYEE, Facture.StatutFacture.ANNULEE));
+        TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.PAIEMENT_PARTIEL,
                 EnumSet.of(Facture.StatutFacture.PAYEE, Facture.StatutFacture.IMPAYEE, Facture.StatutFacture.ANNULEE));
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.IMPAYEE,
-                EnumSet.of(Facture.StatutFacture.PAYEE, Facture.StatutFacture.ANNULEE));
+                EnumSet.of(Facture.StatutFacture.PAIEMENT_PARTIEL, Facture.StatutFacture.PAYEE, Facture.StatutFacture.ANNULEE));
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.PAYEE, EnumSet.noneOf(Facture.StatutFacture.class));
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.ANNULEE, EnumSet.noneOf(Facture.StatutFacture.class));
     }

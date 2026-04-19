@@ -76,6 +76,7 @@ public class SecurityConfig {
                                 "/devises/**",
                                 "/api/v1/factures/**",
                                 "/api/v1/fournisseurs/**",
+                                "/api/v1/paiements/**",
                                 "/api/v1/stock-alertes/**",
                                 "/api/v1/achats/**"
                         ).hasAnyRole("ADMIN", "USER")

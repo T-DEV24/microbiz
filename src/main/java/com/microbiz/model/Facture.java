@@ -27,6 +27,7 @@ public class Facture {
     public enum StatutFacture {
         BROUILLON,
         ENVOYEE,
+        PAIEMENT_PARTIEL,
         PAYEE,
         IMPAYEE,
         ANNULEE
