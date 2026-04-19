@@ -4,6 +4,7 @@ import com.microbiz.model.Paiement;
 import com.microbiz.service.PaiementService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class PaiementApiController {
     private PaiementService paiementService;
 
     @PostMapping
-    public Paiement create(@Valid @RequestBody PaiementCreateRequest request) {
+    public PaiementResponse create(@Valid @RequestBody PaiementCreateRequest request) {
         Paiement paiement = Paiement.builder()
                 .montant(request.montant())
                 .devise(request.devise())
@@ -27,7 +28,8 @@ public class PaiementApiController {
                 .dateEncaissement(request.dateEncaissement())
                 .reference(request.reference())
                 .build();
-        return paiementService.create(request.factureId(), paiement);
+        Paiement saved = paiementService.create(request.factureId(), paiement);
+        return toResponse(saved);
     }
 
     @GetMapping("/{factureId}")
@@ -36,14 +38,7 @@ public class PaiementApiController {
         double totalEncaisse = paiementService.getTotalEncaisseByFacture(factureId);
         double resteAPayer = paiementService.getResteAPayer(factureId);
         List<PaiementResponse> paiementResponses = paiements.stream()
-                .map(p -> new PaiementResponse(
-                        p.getId(),
-                        p.getMontant(),
-                        p.getDevise(),
-                        p.getModePaiement(),
-                        p.getDateEncaissement(),
-                        p.getReference()
-                ))
+                .map(this::toResponse)
                 .toList();
         return Map.of(
                 "factureId", factureId,
@@ -55,12 +50,23 @@ public class PaiementApiController {
 
     public record PaiementCreateRequest(
             @NotNull Long factureId,
-            @NotNull Double montant,
+            @NotNull @Positive Double montant,
             String devise,
             @NotNull Paiement.ModePaiement modePaiement,
             java.time.LocalDate dateEncaissement,
             String reference
     ) {}
+
+    private PaiementResponse toResponse(Paiement paiement) {
+        return new PaiementResponse(
+                paiement.getId(),
+                paiement.getMontant(),
+                paiement.getDevise(),
+                paiement.getModePaiement(),
+                paiement.getDateEncaissement(),
+                paiement.getReference()
+        );
+    }
 
     public record PaiementResponse(
             Long id,

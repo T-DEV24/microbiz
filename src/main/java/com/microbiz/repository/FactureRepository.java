@@ -1,8 +1,10 @@
 package com.microbiz.repository;
 
 import com.microbiz.model.Facture;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +18,9 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
     boolean existsByNumero(String numero);
     List<Facture> findAllByTenantKeyOrderByDateEmissionDesc(String tenantKey);
     Optional<Facture> findByIdAndTenantKey(Long id, String tenantKey);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT f FROM Facture f WHERE f.id = :id AND f.tenantKey = :tenantKey")
+    Optional<Facture> findByIdAndTenantKeyForUpdate(@Param("id") Long id, @Param("tenantKey") String tenantKey);
 
     @Query("""
             SELECT f FROM Facture f

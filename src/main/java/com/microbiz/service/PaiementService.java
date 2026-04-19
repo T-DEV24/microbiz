@@ -24,7 +24,7 @@ public class PaiementService {
 
     public Paiement create(Long factureId, Paiement paiement) {
         String tenant = TenantContext.getTenant();
-        Facture facture = factureRepository.findByIdAndTenantKey(factureId, tenant)
+        Facture facture = factureRepository.findByIdAndTenantKeyForUpdate(factureId, tenant)
                 .orElseThrow(() -> new RuntimeException("Facture introuvable"));
 
         if (facture.getStatut() == Facture.StatutFacture.ANNULEE) {

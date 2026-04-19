@@ -44,7 +44,7 @@ class PaiementServiceTest {
                 .modePaiement(Paiement.ModePaiement.ESPECES)
                 .build();
 
-        when(factureRepository.findByIdAndTenantKey(1L, "default")).thenReturn(Optional.of(facture));
+        when(factureRepository.findByIdAndTenantKeyForUpdate(1L, "default")).thenReturn(Optional.of(facture));
         when(paiementRepository.save(any(Paiement.class))).thenAnswer(inv -> inv.getArgument(0));
         when(paiementRepository.findByTenantKeyAndFactureIdOrderByDateEncaissementDescIdDesc("default", 1L))
                 .thenReturn(List.of());
@@ -73,7 +73,7 @@ class PaiementServiceTest {
                 .modePaiement(Paiement.ModePaiement.VIREMENT)
                 .build();
 
-        when(factureRepository.findByIdAndTenantKey(2L, "default")).thenReturn(Optional.of(facture));
+        when(factureRepository.findByIdAndTenantKeyForUpdate(2L, "default")).thenReturn(Optional.of(facture));
         when(paiementRepository.save(any(Paiement.class))).thenAnswer(inv -> inv.getArgument(0));
         when(paiementRepository.findByTenantKeyAndFactureIdOrderByDateEncaissementDescIdDesc("default", 2L))
                 .thenReturn(List.of());
@@ -106,7 +106,7 @@ class PaiementServiceTest {
                 .modePaiement(Paiement.ModePaiement.ESPECES)
                 .build();
 
-        when(factureRepository.findByIdAndTenantKey(3L, "default")).thenReturn(Optional.of(facture));
+        when(factureRepository.findByIdAndTenantKeyForUpdate(3L, "default")).thenReturn(Optional.of(facture));
         when(paiementRepository.findByTenantKeyAndFactureIdOrderByDateEncaissementDescIdDesc("default", 3L))
                 .thenReturn(List.of(ancienPaiement));
         when(currencyRateService.toBase(5000.0, "XAF")).thenReturn(5000.0);
@@ -115,5 +115,28 @@ class PaiementServiceTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> paiementService.create(3L, paiement));
         assertEquals("Le montant saisi dépasse le reste à payer.", ex.getMessage());
+    }
+
+    @Test
+    void createShouldRejectPaymentForCanceledInvoice() {
+        Facture facture = Facture.builder()
+                .id(4L)
+                .devise("XAF")
+                .montantTtc(10000.0)
+                .statut(Facture.StatutFacture.ANNULEE)
+                .clientNom("Client")
+                .numero("FAC-2026-00004")
+                .build();
+
+        Paiement paiement = Paiement.builder()
+                .montant(1000.0)
+                .devise("XAF")
+                .modePaiement(Paiement.ModePaiement.ESPECES)
+                .build();
+
+        when(factureRepository.findByIdAndTenantKeyForUpdate(4L, "default")).thenReturn(Optional.of(facture));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> paiementService.create(4L, paiement));
+        assertEquals("Impossible d'encaisser un paiement sur une facture annulée.", ex.getMessage());
     }
 }
