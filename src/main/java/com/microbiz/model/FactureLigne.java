@@ -45,11 +45,26 @@ public class FactureLigne {
     @Builder.Default
     private Double remise = 0.0;
 
-    public double getTotalLigne() {
+    @DecimalMin(value = "0.0")
+    @Column(nullable = false)
+    @Builder.Default
+    private Double tauxTva = 0.0;
+
+    public double getMontantHt() {
         double q = quantite != null ? quantite : 0;
         double pu = prixUnitaire != null ? prixUnitaire : 0;
         double brut = q * pu;
         double remisePct = remise != null ? remise : 0;
-        return brut - (brut * (remisePct / 100.0));
+        return Math.max(brut - (brut * (remisePct / 100.0)), 0.0);
+    }
+
+    public double getMontantTva() {
+        double ht = getMontantHt();
+        double tvaPct = tauxTva != null ? tauxTva : 0;
+        return Math.max(ht * (tvaPct / 100.0), 0.0);
+    }
+
+    public double getTotalLigne() {
+        return getMontantHt() + getMontantTva();
     }
 }

@@ -23,4 +23,14 @@ public class Fournisseur {
     private String telephone;
 
     private String email;
+
+    @Column(name = "tenant_key", nullable = false, length = 100)
+    private String tenantKey = "default";
+
+    @PrePersist
+    public void prePersist() {
+        if (tenantKey == null || tenantKey.isBlank()) {
+            tenantKey = "default";
+        }
+    }
 }
