@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.time.LocalDateTime;
 
 @Service
 public class CurrencyRateService {
@@ -26,6 +27,7 @@ public class CurrencyRateService {
 
     private final Map<String, Double> ratesToBase = new ConcurrentHashMap<>();
     private static final List<String> SUPPORTED_CURRENCIES = List.of("XAF", "EUR", "USD", "GNF");
+    private volatile LocalDateTime lastRefreshAt;
 
     @PostConstruct
     public void initializeRates() {
@@ -34,6 +36,7 @@ public class CurrencyRateService {
         ratesToBase.put("USD", usdToBase);
         ratesToBase.put("EUR", eurToBase);
         ratesToBase.put("GNF", gnfToBase);
+        lastRefreshAt = LocalDateTime.now();
     }
 
     @Scheduled(cron = "${microbiz.currency.refresh-cron:0 0 */6 * * *}")
@@ -53,6 +56,11 @@ public class CurrencyRateService {
             mergeApiRate(rates, "GNF");
             mergeApiRate(rates, "XAF");
         }
+        lastRefreshAt = LocalDateTime.now();
+    }
+
+    public void refreshRatesNow() {
+        refreshRates();
     }
 
     public double toBase(double amount, String currency) {
@@ -100,6 +108,10 @@ public class CurrencyRateService {
 
     public Map<String, Double> getRatesToBase() {
         return Map.copyOf(ratesToBase);
+    }
+
+    public LocalDateTime getLastRefreshAt() {
+        return lastRefreshAt;
     }
 
     public void updateRate(String currency, double rateToBase) {

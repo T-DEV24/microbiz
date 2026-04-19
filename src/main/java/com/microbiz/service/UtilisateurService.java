@@ -4,6 +4,8 @@ import com.microbiz.model.Utilisateur;
 import com.microbiz.repository.UtilisateurRepository;
 import com.microbiz.security.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +40,29 @@ public class UtilisateurService {
                 .filter(u -> (u.getNom() != null && u.getNom().toLowerCase().contains(query))
                         || (u.getEmail() != null && u.getEmail().toLowerCase().contains(query)))
                 .toList();
+    }
+
+    public Page<Utilisateur> rechercherPage(String q, String role, Pageable pageable) {
+        String tenant = TenantContext.getTenant();
+        String query = q == null ? "" : q.trim();
+        boolean hasRole = role != null && !role.isBlank();
+        boolean hasQuery = !query.isBlank();
+
+        if (!hasRole && !hasQuery) {
+            return utilisateurRepository.findByTenantKey(tenant, pageable);
+        }
+        if (hasRole && !hasQuery) {
+            return utilisateurRepository.findByTenantKeyAndRole(tenant, role, pageable);
+        }
+        if (!hasRole) {
+            // approximation OR (nom/email) via fusion nom + email page pour éviter requête custom lourde
+            Page<Utilisateur> byNom = utilisateurRepository.findByTenantKeyAndNomContainingIgnoreCase(tenant, query, pageable);
+            if (byNom.hasContent()) return byNom;
+            return utilisateurRepository.findByTenantKeyAndEmailContainingIgnoreCase(tenant, query, pageable);
+        }
+        Page<Utilisateur> byNom = utilisateurRepository.findByTenantKeyAndRoleAndNomContainingIgnoreCase(tenant, role, query, pageable);
+        if (byNom.hasContent()) return byNom;
+        return utilisateurRepository.findByTenantKeyAndRoleAndEmailContainingIgnoreCase(tenant, role, query, pageable);
     }
 
     public boolean emailExiste(String email) {

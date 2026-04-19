@@ -82,8 +82,8 @@
             <div class="card" style="margin-bottom:0">
                 <div class="card-header">
                     <div class="card-title">Utilisateurs actifs</div>
-                    <span style="font-size:12px;color:var(--muted)" th:if="${utilisateurs != null}"
-                          th:text="${#lists.size(utilisateurs)} + ' comptes'"></span>
+                    <span style="font-size:12px;color:var(--muted)" th:if="${utilisateursPage != null}"
+                          th:text="${utilisateursPage.totalElements} + ' comptes'"></span>
                 </div>
                 <div th:if="${utilisateurs == null or #lists.isEmpty(utilisateurs)}" style="padding:30px;text-align:center;color:var(--muted);font-size:13px">
                     Aucun utilisateur.
@@ -111,6 +111,19 @@
                     </tr>
                     </tbody>
                 </table>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px"
+                     th:if="${utilisateursPage != null and utilisateursPage.totalPages > 1}">
+                    <small style="color:#6b7280"
+                           th:text="'Page ' + (${utilisateursPage.number}+1) + ' / ' + ${utilisateursPage.totalPages}"></small>
+                    <div style="display:flex;gap:8px">
+                        <a class="action-btn btn-edit"
+                           th:if="${utilisateursPage.hasPrevious()}"
+                           th:href="@{/utilisateurs(page=${utilisateursPage.number-1},size=${size},q=${q},role=${role},sort=${sort},dir=${dir})}">Précédent</a>
+                        <a class="action-btn btn-edit"
+                           th:if="${utilisateursPage.hasNext()}"
+                           th:href="@{/utilisateurs(page=${utilisateursPage.number+1},size=${size},q=${q},role=${role},sort=${sort},dir=${dir})}">Suivant</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

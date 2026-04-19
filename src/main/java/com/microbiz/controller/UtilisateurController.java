@@ -4,6 +4,9 @@ import com.microbiz.model.Utilisateur;
 import com.microbiz.service.UtilisateurService;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,11 +31,23 @@ public class UtilisateurController {
     @GetMapping
     public String index(@RequestParam(required = false) String q,
                         @RequestParam(required = false) String role,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size,
+                        @RequestParam(defaultValue = "nom") String sort,
+                        @RequestParam(defaultValue = "asc") String dir,
                         Model model) {
-        List<Utilisateur> utilisateurs = utilisateurService.rechercher(q, role);
-        model.addAttribute("utilisateurs", utilisateurs);
+        String sortField = "email".equalsIgnoreCase(sort) ? "email" : "nom";
+        Sort.Direction direction = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        PageRequest pageable = PageRequest.of(Math.max(0, page), Math.min(Math.max(5, size), 100), Sort.by(direction, sortField));
+        Page<Utilisateur> utilisateursPage = utilisateurService.rechercherPage(q, role, pageable);
+
+        model.addAttribute("utilisateurs", utilisateursPage.getContent());
+        model.addAttribute("utilisateursPage", utilisateursPage);
         model.addAttribute("q", q == null ? "" : q);
         model.addAttribute("role", role == null ? "" : role);
+        model.addAttribute("size", pageable.getPageSize());
+        model.addAttribute("sort", sortField);
+        model.addAttribute("dir", direction.name().toLowerCase());
         return "utilisateurs";
     }
 

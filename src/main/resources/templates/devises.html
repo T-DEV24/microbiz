@@ -5,21 +5,21 @@
     <div class="container-fluid p-4" style="max-width:900px">
         <h2 class="mb-3">Taux de change (devise principale : <span th:text="${baseCurrency}">XAF</span>)</h2>
         <div class="alert alert-success" th:if="${succes}" th:text="${succes}"></div>
+        <div class="alert alert-info">
+            Les taux sont synchronisés automatiquement (job planifié). Aucune saisie manuelle n'est requise.
+            <span th:if="${lastRefreshAt != null}">
+                Dernière synchro : <strong th:text="${#temporals.format(lastRefreshAt, 'dd/MM/yyyy HH:mm')}"></strong>.
+            </span>
+        </div>
 
         <div class="card p-3 shadow-sm mb-3">
-            <form class="row g-2" th:action="@{/devises/rate}" method="post">
-                <div class="col-md-4">
-                    <label class="form-label">Code devise</label>
-                    <select class="form-select" name="code">
-                        <option>XAF</option><option>EUR</option><option>USD</option><option>GNF</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Taux vers devise principale</label>
-                    <input type="number" step="0.0001" min="0.0001" name="rate" class="form-control" required>
+            <form class="row g-2" th:action="@{/devises/refresh}" method="post">
+                <div class="col-md-8">
+                    <label class="form-label">Actualisation</label>
+                    <div class="form-control bg-light">Récupération automatique depuis la source API configurée.</div>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary w-100" type="submit">Mettre à jour</button>
+                    <button class="btn btn-primary w-100" type="submit">Actualiser maintenant</button>
                 </div>
             </form>
         </div>
