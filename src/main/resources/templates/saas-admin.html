@@ -3,14 +3,101 @@
       th:replace="fragments/dashboard-layout :: layout(~{::content}, 'SaaS Admin', 'Multi-tenant & abonnements', 'saas-admin')">
 <div th:fragment="content">
     <div class="container-fluid p-4">
-        <h2 class="mb-3">Administration SaaS (phase 1)</h2>
-        <div class="alert alert-info">Isolation tenant active via <code>X-Tenant-Key</code>. Plans disponibles : Free / Pro / Business.</div>
-        <div class="row g-3">
+        <h2 class="mb-3">Administration SaaS v2</h2>
+        <div class="alert alert-info">
+            Gestion des abonnements tenant : création/mise à jour, statut, date d'essai, annulation.
+        </div>
+        <th:block th:replace="fragments/ui-components :: flashMessages(${succes}, ${erreur})"></th:block>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white"><strong>Nouvel abonnement / Mise à jour</strong></div>
+            <div class="card-body">
+                <form class="row g-2 align-items-end" th:action="@{/saas/admin/subscriptions}" method="post">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Tenant</label>
+                        <input class="form-control" name="tenantKey" placeholder="ex: tenant-demo" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Plan</label>
+                        <select class="form-select" name="planCode">
+                            <option th:each="p : ${plans}" th:value="${p}" th:text="${p}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Statut</label>
+                        <select class="form-select" name="status">
+                            <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Début</label>
+                        <input class="form-control" type="date" name="startsAt">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Fin essai</label>
+                        <input class="form-control" type="date" name="trialEndsAt">
+                    </div>
+                    <div class="col-md-1 form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="autoRenew" name="autoRenew" checked>
+                        <label class="form-check-label small" for="autoRenew">Auto</label>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary btn-sm" type="submit">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
             <div class="col-md-4" th:each="plan : ${plans}">
-                <div class="card p-3 shadow-sm">
+                <div class="card p-3 shadow-sm h-100">
                     <h5 th:text="${plan}"></h5>
-                    <p class="text-muted mb-0">Facturation mensuelle en <span th:text="${baseCurrency}">XAF</span> (préparation architecture).</p>
+                    <p class="text-muted mb-0">
+                        <span th:text="${#numbers.formatDecimal(planPrices[plan],0,'COMMA',0,'POINT')}">0</span>
+                        <span th:text="${baseCurrency}">XAF</span> / mois
+                    </p>
                 </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white"><strong>Abonnements tenants</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Tenant</th>
+                        <th>Plan</th>
+                        <th>Statut</th>
+                        <th>Prix mensuel</th>
+                        <th>Début</th>
+                        <th>Fin essai</th>
+                        <th>Auto-renew</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(subscriptions)}">
+                        <td colspan="8" class="text-muted py-3">Aucun abonnement configuré.</td>
+                    </tr>
+                    <tr th:each="sub : ${subscriptions}">
+                        <td th:text="${sub.tenantKey}">default</td>
+                        <td th:text="${sub.planCode}">FREE</td>
+                        <td th:text="${sub.status}">ACTIVE</td>
+                        <td th:text="${#numbers.formatDecimal(sub.monthlyPrice,0,'COMMA',0,'POINT')} + ' ' + ${sub.currency}">0 XAF</td>
+                        <td th:text="${sub.startsAt}">2026-01-01</td>
+                        <td th:text="${sub.trialEndsAt != null ? sub.trialEndsAt : '—'}">—</td>
+                        <td th:text="${sub.autoRenew ? 'Oui' : 'Non'}">Oui</td>
+                        <td>
+                            <form th:if="${sub.status.name() != 'CANCELED'}"
+                                  th:action="@{/saas/admin/subscriptions/{tenantKey}/cancel(tenantKey=${sub.tenantKey})}"
+                                  method="post">
+                                <button class="btn btn-outline-danger btn-sm" type="submit">Annuler</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

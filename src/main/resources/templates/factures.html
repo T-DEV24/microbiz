@@ -26,6 +26,7 @@
         .badge-brouillon { background:#eef2ff; color:#4338ca; }
         .badge-envoyee { background:#ecfeff; color:#155e75; }
         .badge-payee { background:#ecfdf5; color:#166534; }
+        .badge-partiel { background:#fefce8; color:#a16207; }
         .badge-impayee { background:#fff7ed; color:#9a3412; }
         .badge-annulee { background:#fef2f2; color:#b91c1c; }
         @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
@@ -38,8 +39,7 @@
     </div>
 
     <div class="content">
-        <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
-        <div class="alert-success" style="background:#fef2f2;border-color:#fecaca;color:#b91c1c" th:if="${erreur}" th:text="${erreur}"></div>
+        <th:block th:replace="fragments/ui-components :: flashMessages(${succes}, ${erreur})"></th:block>
         <form class="filters" th:action="@{/factures}" method="get">
             <input class="form-control-dark" style="max-width:220px;margin-bottom:0" type="text" name="q" th:value="${q}" placeholder="Client...">
             <select class="form-control-dark" style="max-width:170px;margin-bottom:0" name="statut">
@@ -118,8 +118,9 @@
                             <span class="badge"
                                   th:classappend="${f.statut.name() == 'BROUILLON'} ? ' badge-brouillon' :
                                                   (${f.statut.name() == 'ENVOYEE'} ? ' badge-envoyee' :
+                                                  (${f.statut.name() == 'PAIEMENT_PARTIEL'} ? ' badge-partiel' :
                                                   (${f.statut.name() == 'PAYEE'} ? ' badge-payee' :
-                                                  (${f.statut.name() == 'IMPAYEE'} ? ' badge-impayee' : ' badge-annulee')))"
+                                                  (${f.statut.name() == 'IMPAYEE'} ? ' badge-impayee' : ' badge-annulee'))))"
                                   th:text="${f.statut}">BROUILLON</span>
                         </td>
                         <td th:text="${f.dateEmission != null ? #temporals.format(f.dateEmission,'dd/MM/yyyy') : '—'}">—</td>
@@ -132,6 +133,12 @@
                                 <button type="submit" class="action-btn btn-edit">MAJ</button>
                             </form>
                             <a class="action-btn btn-edit" th:href="@{/factures/{id}/pdf(id=${f.id})}">PDF</a>
+                            <button type="button"
+                                    class="action-btn"
+                                    th:attr="data-facture-id=${f.id},data-facture-numero=${f.numero},data-facture-devise=${f.devise}"
+                                    onclick="openPaiementModal(this)">
+                                Encaisser
+                            </button>
                             </div>
                         </td>
                     </tr>
@@ -153,5 +160,160 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="paiementModal" tabindex="-1" aria-labelledby="paiementModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paiementModalLabel">Encaissement facture</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success py-2 d-none" id="paiementSuccess"></div>
+                    <div class="alert alert-danger py-2 d-none" id="paiementError"></div>
+
+                    <div class="mb-3">
+                        <div><strong>Facture:</strong> <span id="paiementFactureNumero">—</span></div>
+                        <div class="text-muted">
+                            Total encaissé: <strong id="paiementTotalEncaisse">0</strong> •
+                            Reste à payer: <strong id="paiementReste">0</strong>
+                        </div>
+                    </div>
+
+                    <form id="paiementForm" class="row g-2 mb-3">
+                        <input type="hidden" id="paiementFactureId" required>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Montant</label>
+                            <input class="form-control" id="paiementMontant" type="number" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Mode</label>
+                            <select class="form-select" id="paiementMode" required>
+                                <option value="ESPECES">Espèces</option>
+                                <option value="VIREMENT">Virement</option>
+                                <option value="MOBILE_MONEY">Mobile Money</option>
+                                <option value="CHEQUE">Chèque</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-muted">Devise</label>
+                            <input class="form-control" id="paiementDevise" maxlength="8" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-muted">Date</label>
+                            <input class="form-control" id="paiementDate" type="date">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-muted">Référence</label>
+                            <input class="form-control" id="paiementReference" maxlength="120">
+                        </div>
+                        <div class="col-12">
+                            <button class="btn-submit" type="submit">Enregistrer encaissement</button>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Mode</th>
+                                <th>Référence</th>
+                                <th>Montant</th>
+                            </tr>
+                            </thead>
+                            <tbody id="paiementHistoryBody">
+                            <tr><td colspan="4" class="text-muted">Chargement…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    const paiementModalEl = document.getElementById('paiementModal');
+    const paiementModal = paiementModalEl ? new bootstrap.Modal(paiementModalEl) : null;
+    const fmt = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
+
+    function setPaiementMessage(id, message) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = message || '';
+        el.classList.toggle('d-none', !message);
+    }
+
+    async function loadPaiements(factureId, devise) {
+        const historyBody = document.getElementById('paiementHistoryBody');
+        try {
+            const response = await fetch(`/api/v1/paiements/${factureId}`);
+            if (!response.ok) throw new Error('Impossible de charger les encaissements');
+            const data = await response.json();
+            document.getElementById('paiementTotalEncaisse').textContent = `${fmt.format(data.totalEncaisse || 0)} ${devise}`;
+            document.getElementById('paiementReste').textContent = `${fmt.format(data.resteAPayer || 0)} ${devise}`;
+            const rows = (data.paiements || []).map(p => `
+                <tr>
+                    <td>${p.dateEncaissement || '—'}</td>
+                    <td>${p.modePaiement || '—'}</td>
+                    <td>${p.reference || '—'}</td>
+                    <td>${fmt.format(p.montant || 0)} ${p.devise || devise}</td>
+                </tr>
+            `).join('');
+            historyBody.innerHTML = rows || `<tr><td colspan="4" class="text-muted">Aucun encaissement enregistré.</td></tr>`;
+        } catch (e) {
+            historyBody.innerHTML = `<tr><td colspan="4" class="text-danger">${e.message}</td></tr>`;
+        }
+    }
+
+    function openPaiementModal(button) {
+        const factureId = button.getAttribute('data-facture-id');
+        const factureNumero = button.getAttribute('data-facture-numero');
+        const devise = button.getAttribute('data-facture-devise') || 'XAF';
+        document.getElementById('paiementFactureId').value = factureId;
+        document.getElementById('paiementFactureNumero').textContent = factureNumero;
+        document.getElementById('paiementDevise').value = devise;
+        document.getElementById('paiementDate').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('paiementMontant').value = '';
+        document.getElementById('paiementReference').value = '';
+        setPaiementMessage('paiementSuccess', '');
+        setPaiementMessage('paiementError', '');
+        loadPaiements(factureId, devise);
+        paiementModal && paiementModal.show();
+    }
+
+    document.getElementById('paiementForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const factureId = Number(document.getElementById('paiementFactureId').value);
+        const devise = document.getElementById('paiementDevise').value;
+        const payload = {
+            factureId,
+            montant: Number(document.getElementById('paiementMontant').value),
+            modePaiement: document.getElementById('paiementMode').value,
+            devise: devise,
+            dateEncaissement: document.getElementById('paiementDate').value || null,
+            reference: document.getElementById('paiementReference').value || null
+        };
+        try {
+            const res = await fetch('/api/v1/paiements', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err || 'Erreur lors de l’enregistrement');
+            }
+            setPaiementMessage('paiementSuccess', 'Encaissement enregistré avec succès.');
+            setPaiementMessage('paiementError', '');
+            document.getElementById('paiementMontant').value = '';
+            document.getElementById('paiementReference').value = '';
+            await loadPaiements(factureId, devise);
+        } catch (err) {
+            setPaiementMessage('paiementError', err.message || 'Erreur inconnue');
+            setPaiementMessage('paiementSuccess', '');
+        }
+    });
+</script>
 </html>
