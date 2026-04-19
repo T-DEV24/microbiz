@@ -27,6 +27,7 @@ public class Facture {
     public enum StatutFacture {
         BROUILLON,
         ENVOYEE,
+        PAIEMENT_PARTIEL,
         PAYEE,
         IMPAYEE,
         ANNULEE
@@ -54,6 +55,18 @@ public class Facture {
     @DecimalMin(value = "0.0")
     @Column(nullable = false)
     private Double montantTtc;
+
+    @DecimalMin(value = "0.0")
+    @Column(nullable = false)
+    private Double montantHt = 0.0;
+
+    @DecimalMin(value = "0.0")
+    @Column(nullable = false)
+    private Double montantTva = 0.0;
+
+    @DecimalMin(value = "0.0")
+    @Column(nullable = false)
+    private Double remisePourcent = 0.0;
 
     @Column(length = 8, nullable = false)
     private String devise = "XAF";

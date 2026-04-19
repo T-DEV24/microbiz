@@ -76,6 +76,7 @@ public class SecurityConfig {
                                 "/devises/**",
                                 "/api/v1/factures/**",
                                 "/api/v1/fournisseurs/**",
+                                "/api/v1/paiements/**",
                                 "/api/v1/stock-alertes/**",
                                 "/api/v1/achats/**"
                         ).hasAnyRole("ADMIN", "USER")
@@ -90,6 +91,7 @@ public class SecurityConfig {
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
                 .formLogin(form -> form
                         .loginPage("/login")
                         // FIX CRITIQUE : URL différente de loginPage → évite la boucle
