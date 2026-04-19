@@ -221,8 +221,8 @@ public class FactureService {
                 doc.add(paiementTable);
                 double totalEncaisse = paiementService.getTotalEncaisseByFacture(facture.getId());
                 double reste = paiementService.getResteAPayer(facture.getId());
-                doc.add(new Paragraph("Total encaissé (base): " + String.format("%,.0f", totalEncaisse).replace(',', ' ') + " " + facture.getDevise()));
-                doc.add(new Paragraph("Reste à payer (base): " + String.format("%,.0f", reste).replace(',', ' ') + " " + facture.getDevise()));
+                doc.add(new Paragraph("Total encaissé: " + String.format("%,.0f", totalEncaisse).replace(',', ' ') + " " + facture.getDevise()));
+                doc.add(new Paragraph("Reste à payer: " + String.format("%,.0f", reste).replace(',', ' ') + " " + facture.getDevise()));
             }
             if (settings.getMentionsLegales() != null && !settings.getMentionsLegales().isBlank()) {
                 doc.add(new Paragraph(" "));

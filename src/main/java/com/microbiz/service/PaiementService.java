@@ -27,6 +27,10 @@ public class PaiementService {
         Facture facture = factureRepository.findByIdAndTenantKey(factureId, tenant)
                 .orElseThrow(() -> new RuntimeException("Facture introuvable"));
 
+        if (facture.getStatut() == Facture.StatutFacture.ANNULEE) {
+            throw new RuntimeException("Impossible d'encaisser un paiement sur une facture annulée.");
+        }
+
         if (paiement.getMontant() == null || paiement.getMontant() <= 0) {
             throw new RuntimeException("Le montant du paiement doit être positif.");
         }
@@ -35,15 +39,22 @@ public class PaiementService {
             paiement.setDevise(facture.getDevise());
         }
 
-        paiement.setFacture(facture);
-        paiement.setTenantKey(tenant);
-        Paiement saved = paiementRepository.save(paiement);
-
-        double totalEncaisseBase = getTotalEncaisseByFacture(factureId);
         double totalFactureBase = currencyRateService.toBase(
                 facture.getMontantTtc() == null ? 0.0 : facture.getMontantTtc(),
                 facture.getDevise()
         );
+        double totalEncaisseBaseAvant = getTotalEncaisseBaseByFacture(factureId);
+        double paiementBase = currencyRateService.toBase(paiement.getMontant(), paiement.getDevise());
+
+        if (totalFactureBase > 0 && (totalEncaisseBaseAvant + paiementBase) > (totalFactureBase + 0.0001)) {
+            throw new RuntimeException("Le montant saisi dépasse le reste à payer.");
+        }
+
+        paiement.setFacture(facture);
+        paiement.setTenantKey(tenant);
+        Paiement saved = paiementRepository.save(paiement);
+
+        double totalEncaisseBase = totalEncaisseBaseAvant + paiementBase;
 
         if (totalEncaisseBase >= totalFactureBase && totalFactureBase > 0) {
             facture.setStatut(Facture.StatutFacture.PAYEE);
@@ -61,6 +72,14 @@ public class PaiementService {
     }
 
     public double getTotalEncaisseByFacture(Long factureId) {
+        String tenant = TenantContext.getTenant();
+        Facture facture = factureRepository.findByIdAndTenantKey(factureId, tenant)
+                .orElseThrow(() -> new RuntimeException("Facture introuvable"));
+        double totalBase = getTotalEncaisseBaseByFacture(factureId);
+        return currencyRateService.fromBase(totalBase, facture.getDevise());
+    }
+
+    public double getTotalEncaisseBaseByFacture(Long factureId) {
         return findByFacture(factureId).stream()
                 .mapToDouble(p -> currencyRateService.toBase(p.getMontant() == null ? 0.0 : p.getMontant(), p.getDevise()))
                 .sum();
@@ -70,10 +89,15 @@ public class PaiementService {
         String tenant = TenantContext.getTenant();
         Facture facture = factureRepository.findByIdAndTenantKey(factureId, tenant)
                 .orElseThrow(() -> new RuntimeException("Facture introuvable"));
+        double totalFacture = facture.getMontantTtc() == null ? 0.0 : facture.getMontantTtc();
         double totalFactureBase = currencyRateService.toBase(
                 facture.getMontantTtc() == null ? 0.0 : facture.getMontantTtc(),
                 facture.getDevise()
         );
-        return Math.max(totalFactureBase - getTotalEncaisseByFacture(factureId), 0.0);
+        double resteBase = Math.max(totalFactureBase - getTotalEncaisseBaseByFacture(factureId), 0.0);
+        if (totalFactureBase == 0) {
+            return Math.max(totalFacture, 0.0);
+        }
+        return currencyRateService.fromBase(resteBase, facture.getDevise());
     }
 }

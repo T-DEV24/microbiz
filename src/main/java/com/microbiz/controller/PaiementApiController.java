@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -34,11 +35,21 @@ public class PaiementApiController {
         List<Paiement> paiements = paiementService.findByFacture(factureId);
         double totalEncaisse = paiementService.getTotalEncaisseByFacture(factureId);
         double resteAPayer = paiementService.getResteAPayer(factureId);
+        List<PaiementResponse> paiementResponses = paiements.stream()
+                .map(p -> new PaiementResponse(
+                        p.getId(),
+                        p.getMontant(),
+                        p.getDevise(),
+                        p.getModePaiement(),
+                        p.getDateEncaissement(),
+                        p.getReference()
+                ))
+                .toList();
         return Map.of(
                 "factureId", factureId,
                 "totalEncaisse", totalEncaisse,
                 "resteAPayer", resteAPayer,
-                "paiements", paiements
+                "paiements", paiementResponses
         );
     }
 
@@ -48,6 +59,15 @@ public class PaiementApiController {
             String devise,
             @NotNull Paiement.ModePaiement modePaiement,
             java.time.LocalDate dateEncaissement,
+            String reference
+    ) {}
+
+    public record PaiementResponse(
+            Long id,
+            Double montant,
+            String devise,
+            Paiement.ModePaiement modePaiement,
+            LocalDate dateEncaissement,
             String reference
     ) {}
 }

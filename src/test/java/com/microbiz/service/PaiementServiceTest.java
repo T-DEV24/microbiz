@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +47,7 @@ class PaiementServiceTest {
         when(factureRepository.findByIdAndTenantKey(1L, "default")).thenReturn(Optional.of(facture));
         when(paiementRepository.save(any(Paiement.class))).thenAnswer(inv -> inv.getArgument(0));
         when(paiementRepository.findByTenantKeyAndFactureIdOrderByDateEncaissementDescIdDesc("default", 1L))
-                .thenReturn(List.of(paiement));
+                .thenReturn(List.of());
         when(currencyRateService.toBase(5000.0, "XAF")).thenReturn(5000.0);
         when(currencyRateService.toBase(10000.0, "XAF")).thenReturn(10000.0);
 
@@ -75,11 +76,44 @@ class PaiementServiceTest {
         when(factureRepository.findByIdAndTenantKey(2L, "default")).thenReturn(Optional.of(facture));
         when(paiementRepository.save(any(Paiement.class))).thenAnswer(inv -> inv.getArgument(0));
         when(paiementRepository.findByTenantKeyAndFactureIdOrderByDateEncaissementDescIdDesc("default", 2L))
-                .thenReturn(List.of(paiement));
+                .thenReturn(List.of());
         when(currencyRateService.toBase(10000.0, "XAF")).thenReturn(10000.0);
 
         paiementService.create(2L, paiement);
 
         assertEquals(Facture.StatutFacture.PAYEE, facture.getStatut());
+    }
+
+    @Test
+    void createShouldRejectOverpayment() {
+        Facture facture = Facture.builder()
+                .id(3L)
+                .devise("XAF")
+                .montantTtc(10000.0)
+                .statut(Facture.StatutFacture.ENVOYEE)
+                .clientNom("Client")
+                .numero("FAC-2026-00003")
+                .build();
+
+        Paiement paiement = Paiement.builder()
+                .montant(6000.0)
+                .devise("XAF")
+                .modePaiement(Paiement.ModePaiement.ESPECES)
+                .build();
+        Paiement ancienPaiement = Paiement.builder()
+                .montant(5000.0)
+                .devise("XAF")
+                .modePaiement(Paiement.ModePaiement.ESPECES)
+                .build();
+
+        when(factureRepository.findByIdAndTenantKey(3L, "default")).thenReturn(Optional.of(facture));
+        when(paiementRepository.findByTenantKeyAndFactureIdOrderByDateEncaissementDescIdDesc("default", 3L))
+                .thenReturn(List.of(ancienPaiement));
+        when(currencyRateService.toBase(5000.0, "XAF")).thenReturn(5000.0);
+        when(currencyRateService.toBase(6000.0, "XAF")).thenReturn(6000.0);
+        when(currencyRateService.toBase(10000.0, "XAF")).thenReturn(10000.0);
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> paiementService.create(3L, paiement));
+        assertEquals("Le montant saisi dépasse le reste à payer.", ex.getMessage());
     }
 }
