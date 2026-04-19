@@ -13,7 +13,6 @@ import com.lowagie.text.pdf.PdfWriter;
 import com.microbiz.repository.FactureRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +22,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.io.ByteArrayOutputStream;
 
 @Service
@@ -39,26 +39,22 @@ public class FactureService {
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.BROUILLON,
                 EnumSet.of(Facture.StatutFacture.ENVOYEE, Facture.StatutFacture.ANNULEE));
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.ENVOYEE,
+                EnumSet.of(Facture.StatutFacture.PAIEMENT_PARTIEL, Facture.StatutFacture.PAYEE, Facture.StatutFacture.IMPAYEE, Facture.StatutFacture.ANNULEE));
+        TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.PAIEMENT_PARTIEL,
                 EnumSet.of(Facture.StatutFacture.PAYEE, Facture.StatutFacture.IMPAYEE, Facture.StatutFacture.ANNULEE));
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.IMPAYEE,
-                EnumSet.of(Facture.StatutFacture.PAYEE, Facture.StatutFacture.ANNULEE));
+                EnumSet.of(Facture.StatutFacture.PAIEMENT_PARTIEL, Facture.StatutFacture.PAYEE, Facture.StatutFacture.ANNULEE));
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.PAYEE, EnumSet.noneOf(Facture.StatutFacture.class));
         TRANSITIONS_AUTORISEES.put(Facture.StatutFacture.ANNULEE, EnumSet.noneOf(Facture.StatutFacture.class));
     }
 
     public List<Facture> findAll() {
-        String tenant = TenantContext.getTenant();
-        return factureRepository.findAll().stream().filter(f -> tenant.equals(f.getTenantKey())).toList();
+        return factureRepository.findAllByTenantKeyOrderByDateEmissionDesc(TenantContext.getTenant());
     }
 
     public Facture findById(Long id) {
-        String tenant = TenantContext.getTenant();
-        Facture facture = factureRepository.findById(id)
+        return factureRepository.findByIdAndTenantKey(id, TenantContext.getTenant())
                 .orElseThrow(() -> new RuntimeException("Facture introuvable"));
-        if (!tenant.equals(facture.getTenantKey())) {
-            throw new RuntimeException("Facture introuvable");
-        }
-        return facture;
     }
 
     public Page<Facture> search(String q,
@@ -67,15 +63,10 @@ public class FactureService {
                                 LocalDate fin,
                                 Pageable pageable) {
         String tenant = TenantContext.getTenant();
-        Page<Facture> page = factureRepository.search(q, statut, debut, fin, pageable);
-        List<Facture> filtered = page.getContent().stream().filter(f -> tenant.equals(f.getTenantKey())).toList();
-        return new PageImpl<>(filtered, pageable, filtered.size());
+        return factureRepository.search(tenant, q, statut, debut, fin, pageable);
     }
 
     public Facture create(Facture facture) {
-        if (facture.getNumero() == null || facture.getNumero().isBlank()) {
-            facture.setNumero(nextNumero(facture.getType() != null ? facture.getType() : Facture.TypeDocument.FACTURE));
-        }
         if (facture.getDateEmission() == null) {
             facture.setDateEmission(LocalDate.now());
         }
@@ -87,12 +78,19 @@ public class FactureService {
         }
         facture.setTenantKey(TenantContext.getTenant());
         recalculerMontant(facture);
-        return factureRepository.save(facture);
+
+        if (facture.getNumero() != null && !facture.getNumero().isBlank()) {
+            return factureRepository.save(facture);
+        }
+
+        facture.setNumero("TMP-" + UUID.randomUUID());
+        Facture created = factureRepository.save(facture);
+        created.setNumero(formatNumero(created.getType(), created.getId()));
+        return factureRepository.save(created);
     }
 
     public Facture updateStatut(Long id, Facture.StatutFacture statut) {
-        Facture facture = factureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Facture introuvable"));
+        Facture facture = findById(id);
         validerTransitionStatut(facture.getStatut(), statut);
         facture.setStatut(statut);
         Facture saved = factureRepository.save(facture);
@@ -121,34 +119,37 @@ public class FactureService {
             if (facture.getMontantTtc() == null || facture.getMontantTtc() < 0) {
                 throw new RuntimeException("Le montant TTC doit être positif.");
             }
+            facture.setMontantHt(Math.max(facture.getMontantTtc(), 0.0));
+            facture.setMontantTva(0.0);
+            facture.setRemisePourcent(Math.max(facture.getRemisePourcent() == null ? 0.0 : facture.getRemisePourcent(), 0.0));
             return;
         }
-        double total = 0.0;
+        double totalHt = 0.0;
+        double totalTva = 0.0;
         for (FactureLigne ligne : facture.getLignes()) {
             if (ligne == null) continue;
             ligne.setFacture(facture);
-            total += ligne.getTotalLigne();
+            totalHt += ligne.getMontantHt();
+            totalTva += ligne.getMontantTva();
         }
-        facture.setMontantTtc(Math.max(total, 0.0));
+        double remiseFacturePct = Math.max(facture.getRemisePourcent() == null ? 0.0 : facture.getRemisePourcent(), 0.0);
+        double montantRemise = totalHt * (remiseFacturePct / 100.0);
+        double htApresRemise = Math.max(totalHt - montantRemise, 0.0);
+        double ratio = totalHt <= 0 ? 1.0 : (htApresRemise / totalHt);
+        double tvaApresRemise = Math.max(totalTva * ratio, 0.0);
+
+        facture.setMontantHt(htApresRemise);
+        facture.setMontantTva(tvaApresRemise);
+        facture.setMontantTtc(Math.max(htApresRemise + tvaApresRemise, 0.0));
     }
 
-    private String nextNumero(Facture.TypeDocument type) {
+    private String formatNumero(Facture.TypeDocument type, Long sequence) {
         String prefix = switch (type) {
             case DEVIS -> "DEV";
             case AVOIR -> "AV";
             default -> "FAC";
         };
-
-        long next = factureRepository.findTopByOrderByIdDesc()
-                .map(f -> f.getId() + 1)
-                .orElse(1L);
-
-        String numero;
-        do {
-            numero = prefix + "-" + LocalDate.now().getYear() + "-" + String.format("%05d", next++);
-        } while (factureRepository.existsByNumero(numero));
-
-        return numero;
+        return prefix + "-" + LocalDate.now().getYear() + "-" + String.format("%05d", sequence);
     }
 
     public byte[] genererPdf(Long id) {
@@ -178,19 +179,26 @@ public class FactureService {
             doc.add(new Paragraph("Devise: " + (facture.getDevise() != null ? facture.getDevise() : "XAF")));
             doc.add(new Paragraph(" "));
 
-            PdfPTable table = new PdfPTable(4);
+            PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
             table.addCell("Description");
             table.addCell("Qté");
             table.addCell("PU");
-            table.addCell("Total");
+            table.addCell("Remise %");
+            table.addCell("TVA %");
+            table.addCell("Total TTC");
             for (FactureLigne l : facture.getLignes()) {
                 table.addCell(l.getDescription());
                 table.addCell(String.valueOf(l.getQuantite()));
                 table.addCell(String.valueOf(l.getPrixUnitaire()));
+                table.addCell(String.format("%,.2f", l.getRemise() == null ? 0.0 : l.getRemise()).replace(',', ' '));
+                table.addCell(String.format("%,.2f", l.getTauxTva() == null ? 0.0 : l.getTauxTva()).replace(',', ' '));
                 table.addCell(String.format("%,.0f", l.getTotalLigne()).replace(',', ' '));
             }
             doc.add(table);
+            doc.add(new Paragraph("Sous-total HT: " + String.format("%,.0f", facture.getMontantHt()).replace(',', ' ') + " " + facture.getDevise()));
+            doc.add(new Paragraph("TVA: " + String.format("%,.0f", facture.getMontantTva()).replace(',', ' ') + " " + facture.getDevise()));
+            doc.add(new Paragraph("Remise facture (%): " + String.format("%,.2f", facture.getRemisePourcent() == null ? 0.0 : facture.getRemisePourcent()).replace(',', ' ')));
             doc.add(new Paragraph("Montant TTC: " + String.format("%,.0f", facture.getMontantTtc()).replace(',', ' ') + " " + facture.getDevise()));
             if (settings.getMentionsLegales() != null && !settings.getMentionsLegales().isBlank()) {
                 doc.add(new Paragraph(" "));

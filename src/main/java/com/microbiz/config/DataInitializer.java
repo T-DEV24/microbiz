@@ -82,11 +82,11 @@ public class DataInitializer implements CommandLineRunner {
         // Clients de demo
         if (clientRepo.count() == 0) {
             clientRepo.save(Client.builder().nom("Marie Ngo")
-                    .telephone("+237 670 123 456").build());
+                    .telephone("+237 670 123 456").tenantKey("default").build());
             clientRepo.save(Client.builder().nom("Paul Ateba")
-                    .telephone("+237 655 789 012").build());
+                    .telephone("+237 655 789 012").tenantKey("default").build());
             clientRepo.save(Client.builder().nom("Sophie Mbarga")
-                    .telephone("+237 690 345 678").build());
+                    .telephone("+237 690 345 678").tenantKey("default").build());
         }
     }
 }
