@@ -90,6 +90,7 @@ public class SecurityConfig {
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
                 .formLogin(form -> form
                         .loginPage("/login")
                         // FIX CRITIQUE : URL différente de loginPage → évite la boucle
