@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="fragments/dashboard-layout :: layout(~{::content}, 'API Docs', 'Documentation API', 'api-docs')">
+<div th:fragment="content">
+    <div class="container-fluid p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h2 class="mb-1">Documentation API</h2>
+                <div class="text-muted" style="font-size:13px">
+                    Intégrée au front office (accès sans quitter l’interface métier).
+                </div>
+            </div>
+            <a class="btn btn-outline-secondary btn-sm" href="/swagger-ui/index.html" target="_blank" rel="noopener">
+                Ouvrir dans un nouvel onglet
+            </a>
+        </div>
+        <div class="card shadow-sm">
+            <div class="ratio ratio-16x9" style="min-height:75vh">
+                <iframe src="/swagger-ui/index.html" title="API documentation" style="border:0;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

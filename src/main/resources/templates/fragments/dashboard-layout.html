@@ -86,7 +86,7 @@
     <a href="/utilisateurs" class="nav-link" th:classappend="${active} == 'utilisateurs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-shield-lock"></i> Utilisateurs</a>
     <a href="/audit-logs" class="nav-link" th:classappend="${active} == 'audit-logs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-journal-check"></i> Audit logs</a>
     <a href="/saas/admin" class="nav-link" th:classappend="${active} == 'saas-admin' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-hdd-network"></i> SaaS Admin</a>
-    <a href="/swagger-ui/index.html" class="nav-link" sec:authorize="hasRole('ADMIN')"><i class="bi bi-code-slash"></i> API Docs</a>
+    <a href="/docs" class="nav-link" th:classappend="${active} == 'api-docs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-code-slash"></i> API Docs</a>
   </nav>
   <div class="sidebar-footer">
     <div class="d-flex align-items-center gap-2">
