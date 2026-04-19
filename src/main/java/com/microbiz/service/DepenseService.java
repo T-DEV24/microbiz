@@ -4,6 +4,7 @@ import com.microbiz.model.Depense;
 import com.microbiz.security.TenantContext;
 import com.microbiz.repository.DepenseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ public class DepenseService {
         return depenseRepository.findByIdAndTenantKey(id, TenantContext.getTenant());
     }
 
+    @CacheEvict(cacheNames = {"stats_ca_total", "stats_evolution_mensuelle"}, allEntries = true)
     public Depense save(Depense d) {
         if (d.getDevise() == null || d.getDevise().isBlank()) {
             d.setDevise("XAF");
@@ -33,6 +35,7 @@ public class DepenseService {
         return depenseRepository.save(d);
     }
 
+    @CacheEvict(cacheNames = {"stats_ca_total", "stats_evolution_mensuelle"}, allEntries = true)
     public void deleteById(Long id) {
         Depense depense = depenseRepository.findByIdAndTenantKey(id, TenantContext.getTenant())
                 .orElseThrow(() -> new RuntimeException("Dépense introuvable"));
