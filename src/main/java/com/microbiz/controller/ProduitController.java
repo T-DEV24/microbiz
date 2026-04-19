@@ -202,7 +202,7 @@ public class ProduitController {
 
     @GetMapping("/export.csv")
     public ResponseEntity<byte[]> exportCsv(@RequestParam(required = false) String q) {
-        Page<Produit> page = produitService.rechercherActifs(q, PageRequest.of(0, 500, Sort.by("nom").ascending()));
+        Page<Produit> page = produitsExportPage(q);
         StringBuilder csv = new StringBuilder("id,nom,categorie,prix_vente,cout_revient,stock\n");
         for (Produit p : page.getContent()) {
             csv.append(p.getId()).append(",")
@@ -223,7 +223,7 @@ public class ProduitController {
     @GetMapping("/export.pdf")
     public ResponseEntity<byte[]> exportPdf(@RequestParam(required = false) String q) {
         try {
-            Page<Produit> page = produitService.rechercherActifs(q, PageRequest.of(0, 500, Sort.by("nom").ascending()));
+            Page<Produit> page = produitsExportPage(q);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Document doc = new Document(PageSize.A4, 36, 36, 42, 36);
             PdfWriter.getInstance(doc, baos);
@@ -286,7 +286,7 @@ public class ProduitController {
             header.createCell(3).setCellValue("Coût");
             header.createCell(4).setCellValue("Stock");
 
-            Page<Produit> page = produitService.rechercherActifs(q, PageRequest.of(0, 2000, Sort.by("nom").ascending()));
+            Page<Produit> page = produitsExportPage(q);
             int rowNum = 1;
             for (Produit p : page.getContent()) {
                 Row row = sheet.createRow(rowNum++);
@@ -312,6 +312,12 @@ public class ProduitController {
         if (value == null) return "";
         String escaped = value.replace("\"", "\"\"");
         return "\"" + escaped + "\"";
+    }
+
+    private Page<Produit> produitsExportPage(String q) {
+        int total = (int) Math.max(produitService.countAll(), 1L);
+        int size = Math.min(total, 10000);
+        return produitService.rechercherActifs(q, PageRequest.of(0, size, Sort.by("nom").ascending()));
     }
 
     private void styleHeaderRow(PdfPTable table, Color bgColor) {

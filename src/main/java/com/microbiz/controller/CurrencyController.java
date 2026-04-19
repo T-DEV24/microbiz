@@ -7,7 +7,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -20,15 +19,14 @@ public class CurrencyController {
     public String index(Model model) {
         model.addAttribute("baseCurrency", currencyRateService.getBaseCurrency());
         model.addAttribute("rates", currencyRateService.getRatesToBase());
+        model.addAttribute("lastRefreshAt", currencyRateService.getLastRefreshAt());
         return "devises";
     }
 
-    @PostMapping("/rate")
-    public String updateRate(@RequestParam String code,
-                             @RequestParam Double rate,
-                             RedirectAttributes ra) {
-        currencyRateService.updateRate(code, rate != null ? rate : 0.0);
-        ra.addFlashAttribute("succes", "Taux mis à jour pour " + code.toUpperCase());
+    @PostMapping("/refresh")
+    public String refresh(RedirectAttributes ra) {
+        currencyRateService.refreshRatesNow();
+        ra.addFlashAttribute("succes", "Taux actualisés automatiquement depuis la source configurée.");
         return "redirect:/devises";
     }
 }

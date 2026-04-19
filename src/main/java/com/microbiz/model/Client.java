@@ -22,6 +22,10 @@ public class Client {
     private String email;
     @Column(name = "date_inscription")
     private LocalDate dateInscription;
+
+    @Column(name = "tenant_key", nullable = false, length = 100)
+    private String tenantKey = "default";
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
     // Remplit automatiquement la date a la creation
@@ -29,6 +33,8 @@ public class Client {
     public void prePersist() {
         if (dateInscription == null)
             dateInscription = LocalDate.now();
+        if (tenantKey == null || tenantKey.isBlank())
+            tenantKey = "default";
     }
 
     public boolean isDeleted() {

@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,13 +30,19 @@ class FactureServiceTest {
                 .montantTtc(15000.0)
                 .build();
 
-        when(factureRepository.findTopByOrderByIdDesc()).thenReturn(Optional.empty());
-        when(factureRepository.existsByNumero("FAC-" + LocalDate.now().getYear() + "-00001")).thenReturn(false);
-        when(factureRepository.save(any(Facture.class))).thenAnswer(inv -> inv.getArgument(0));
+        AtomicLong ids = new AtomicLong(1L);
+        when(factureRepository.save(any(Facture.class))).thenAnswer(inv -> {
+            Facture f = inv.getArgument(0);
+            if (f.getId() == null) {
+                f.setId(ids.getAndIncrement());
+            }
+            return f;
+        });
 
         Facture created = factureService.create(facture);
 
         assertNotNull(created.getNumero());
+        assertTrue(created.getNumero().startsWith("FAC-" + LocalDate.now().getYear() + "-"));
         assertEquals(Facture.StatutFacture.BROUILLON, created.getStatut());
         assertNotNull(created.getDateEmission());
     }
@@ -50,7 +57,7 @@ class FactureServiceTest {
                 .montantTtc(5000.0)
                 .build();
 
-        when(factureRepository.findById(10L)).thenReturn(Optional.of(facture));
+        when(factureRepository.findByIdAndTenantKey(10L, "default")).thenReturn(Optional.of(facture));
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> factureService.updateStatut(10L, Facture.StatutFacture.BROUILLON));

@@ -3,6 +3,7 @@ package com.microbiz.service;
 import com.microbiz.repository.VenteRepository;
 import com.microbiz.security.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ public class StatistiqueService {
     @Autowired private DepenseService depenseService;
     @Autowired private CurrencyRateService currencyRateService;
 
+    @Cacheable(cacheNames = "stats_ca_total", key = "T(com.microbiz.security.TenantContext).getTenant()")
     public Double getChiffreAffairesTotal() {
         String tenant = TenantContext.getTenant();
         return venteRepository.sumByDevise(tenant).stream()
@@ -60,6 +62,7 @@ public class StatistiqueService {
     }
 
     /** AMÉLIORATION 1 : Evolution MENSUELLE */
+    @Cacheable(cacheNames = "stats_evolution_mensuelle", key = "T(com.microbiz.security.TenantContext).getTenant()")
     public Map<String, Double> getEvolutionMensuelle() {
         Map<String, Double> result = new LinkedHashMap<>();
         String[] mois = {"Jan","Fev","Mar","Avr","Mai","Jun","Jul","Aou","Sep","Oct","Nov","Dec"};

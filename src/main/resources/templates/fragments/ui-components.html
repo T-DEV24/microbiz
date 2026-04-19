@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="flashMessages(succes, erreur)">
+    <div class="alert alert-success py-2" th:if="${succes}" th:text="${succes}"></div>
+    <div class="alert alert-danger py-2" th:if="${erreur}" th:text="${erreur}"></div>
+</th:block>
+</html>
