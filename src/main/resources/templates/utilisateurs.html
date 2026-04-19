@@ -27,7 +27,7 @@
         .badge-amber { background:#fef3c7; color:#92400e; }
         @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
-    <div class="topbar">
+    <div class="topbar responsive-toolbar">
         <div>
             <div class="page-title">Gestion des utilisateurs</div>
             <div class="page-sub">Accès réservé aux administrateurs</div>
@@ -43,7 +43,7 @@
         <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
         <div class="alert-success" th:if="${erreur}" style="background:#fef2f2;border-color:#fecaca;color:#b91c1c" th:text="${erreur}"></div>
 
-        <form th:action="@{/utilisateurs}" method="get" style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+        <form th:action="@{/utilisateurs}" method="get" class="responsive-filters" style="margin-bottom:14px">
             <input type="text" name="q" class="form-control-dark" placeholder="Rechercher nom/email..." th:value="${q}" style="max-width:260px;margin-bottom:0">
             <select name="role" class="form-control-dark" style="max-width:220px;margin-bottom:0">
                 <option value="">Tous les rôles</option>
