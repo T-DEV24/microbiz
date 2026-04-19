@@ -33,9 +33,11 @@ public class PaiementApiController {
     public Map<String, Object> listByFacture(@PathVariable Long factureId) {
         List<Paiement> paiements = paiementService.findByFacture(factureId);
         double totalEncaisse = paiementService.getTotalEncaisseByFacture(factureId);
+        double resteAPayer = paiementService.getResteAPayer(factureId);
         return Map.of(
                 "factureId", factureId,
                 "totalEncaisse", totalEncaisse,
+                "resteAPayer", resteAPayer,
                 "paiements", paiements
         );
     }

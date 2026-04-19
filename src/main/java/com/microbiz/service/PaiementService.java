@@ -65,4 +65,15 @@ public class PaiementService {
                 .mapToDouble(p -> currencyRateService.toBase(p.getMontant() == null ? 0.0 : p.getMontant(), p.getDevise()))
                 .sum();
     }
+
+    public double getResteAPayer(Long factureId) {
+        String tenant = TenantContext.getTenant();
+        Facture facture = factureRepository.findByIdAndTenantKey(factureId, tenant)
+                .orElseThrow(() -> new RuntimeException("Facture introuvable"));
+        double totalFactureBase = currencyRateService.toBase(
+                facture.getMontantTtc() == null ? 0.0 : facture.getMontantTtc(),
+                facture.getDevise()
+        );
+        return Math.max(totalFactureBase - getTotalEncaisseByFacture(factureId), 0.0);
+    }
 }

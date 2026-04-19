@@ -32,6 +32,7 @@ public class FactureService {
     @Autowired private FactureRepository factureRepository;
     @Autowired private EmailNotificationService emailNotificationService;
     @Autowired private EntrepriseSettingsService entrepriseSettingsService;
+    @Autowired private PaiementService paiementService;
     private static final Map<Facture.StatutFacture, EnumSet<Facture.StatutFacture>> TRANSITIONS_AUTORISEES =
             new EnumMap<>(Facture.StatutFacture.class);
 
@@ -200,6 +201,29 @@ public class FactureService {
             doc.add(new Paragraph("TVA: " + String.format("%,.0f", facture.getMontantTva()).replace(',', ' ') + " " + facture.getDevise()));
             doc.add(new Paragraph("Remise facture (%): " + String.format("%,.2f", facture.getRemisePourcent() == null ? 0.0 : facture.getRemisePourcent()).replace(',', ' ')));
             doc.add(new Paragraph("Montant TTC: " + String.format("%,.0f", facture.getMontantTtc()).replace(',', ' ') + " " + facture.getDevise()));
+
+            List<com.microbiz.model.Paiement> paiements = paiementService.findByFacture(facture.getId());
+            if (!paiements.isEmpty()) {
+                doc.add(new Paragraph(" "));
+                doc.add(new Paragraph("Historique des encaissements", new Font(Font.HELVETICA, 12, Font.BOLD)));
+                PdfPTable paiementTable = new PdfPTable(4);
+                paiementTable.setWidthPercentage(100);
+                paiementTable.addCell("Date");
+                paiementTable.addCell("Mode");
+                paiementTable.addCell("Référence");
+                paiementTable.addCell("Montant");
+                for (com.microbiz.model.Paiement p : paiements) {
+                    paiementTable.addCell(p.getDateEncaissement() != null ? p.getDateEncaissement().toString() : "—");
+                    paiementTable.addCell(p.getModePaiement() != null ? p.getModePaiement().name() : "—");
+                    paiementTable.addCell(p.getReference() != null && !p.getReference().isBlank() ? p.getReference() : "—");
+                    paiementTable.addCell(String.format("%,.0f %s", p.getMontant(), p.getDevise()).replace(',', ' '));
+                }
+                doc.add(paiementTable);
+                double totalEncaisse = paiementService.getTotalEncaisseByFacture(facture.getId());
+                double reste = paiementService.getResteAPayer(facture.getId());
+                doc.add(new Paragraph("Total encaissé (base): " + String.format("%,.0f", totalEncaisse).replace(',', ' ') + " " + facture.getDevise()));
+                doc.add(new Paragraph("Reste à payer (base): " + String.format("%,.0f", reste).replace(',', ' ') + " " + facture.getDevise()));
+            }
             if (settings.getMentionsLegales() != null && !settings.getMentionsLegales().isBlank()) {
                 doc.add(new Paragraph(" "));
                 doc.add(new Paragraph("Mentions légales: " + settings.getMentionsLegales()));
