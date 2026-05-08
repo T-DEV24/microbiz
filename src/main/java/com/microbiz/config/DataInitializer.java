@@ -40,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
             Utilisateur admin = Utilisateur.builder()
                     .nom("Administrateur")
                     .email("admin@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(effectiveAdminPassword))  // hache !
+                    .motDePasse(passwordEncoder.encode(adminPassword))  // hache !
                     .role(PmeRole.ADMIN.getAuthority())
                     .tenantKey("default")
                     .build();
@@ -48,7 +48,7 @@ public class DataInitializer implements CommandLineRunner {
             Utilisateur user = Utilisateur.builder()
                     .nom("Jean Dupont")
                     .email("jean@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .motDePasse(passwordEncoder.encode(userPassword))
                     .role(PmeRole.USER.getAuthority())
                     .tenantKey("default")
                     .build();
@@ -56,7 +56,7 @@ public class DataInitializer implements CommandLineRunner {
             Utilisateur gerant = Utilisateur.builder()
                     .nom("Co-gérant")
                     .email("gerant@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .motDePasse(passwordEncoder.encode(userPassword))
                     .role(PmeRole.GERANT.getAuthority())
                     .tenantKey("default")
                     .build();
@@ -64,7 +64,7 @@ public class DataInitializer implements CommandLineRunner {
             Utilisateur comptable = Utilisateur.builder()
                     .nom("Comptable externe")
                     .email("comptable@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .motDePasse(passwordEncoder.encode(userPassword))
                     .role(PmeRole.COMPTABLE.getAuthority())
                     .tenantKey("default")
                     .build();
@@ -72,7 +72,7 @@ public class DataInitializer implements CommandLineRunner {
             Utilisateur commercial = Utilisateur.builder()
                     .nom("Awa Commercial")
                     .email("commercial@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .motDePasse(passwordEncoder.encode(userPassword))
                     .role(PmeRole.COMMERCIAL.getAuthority())
                     .tenantKey("default")
                     .build();
@@ -80,17 +80,17 @@ public class DataInitializer implements CommandLineRunner {
             Utilisateur fournisseurUser = Utilisateur.builder()
                     .nom("Distrib Pro")
                     .email("fournisseur@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .motDePasse(passwordEncoder.encode(userPassword))
                     .role(PmeRole.FOURNISSEUR.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(fournisseurUser);
-            System.out.println("  ADMIN -> admin@microbiz.com / " + maskPasswordSource(adminPassword, embeddedLocalDatabase, "admin123"));
-            System.out.println("  USER  -> jean@microbiz.com  / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
-            System.out.println("  GER   -> gerant@microbiz.com / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
-            System.out.println("  CPT   -> comptable@microbiz.com / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
-            System.out.println("  COM   -> commercial@microbiz.com / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
-            System.out.println("  FOUR  -> fournisseur@microbiz.com / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
+            System.out.println("  ADMIN -> admin@microbiz.com / [mot de passe via variable d'environnement]");
+            System.out.println("  USER  -> jean@microbiz.com  / [mot de passe via variable d'environnement]");
+            System.out.println("  GER   -> gerant@microbiz.com / [mot de passe via variable d'environnement]");
+            System.out.println("  CPT   -> comptable@microbiz.com / [mot de passe via variable d'environnement]");
+            System.out.println("  COM   -> commercial@microbiz.com / [mot de passe via variable d'environnement]");
+            System.out.println("  FOUR  -> fournisseur@microbiz.com / [mot de passe via variable d'environnement]");
         }
         // Produits de demo
         if (produitRepo.count() == 0) {
