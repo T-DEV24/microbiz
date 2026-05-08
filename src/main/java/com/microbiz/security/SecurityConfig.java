@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -91,7 +92,9 @@ public class SecurityConfig {
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
+                // Les endpoints REST /api/v1/** réutilisent l'authentification par session :
+                // ils doivent donc conserver la protection CSRF comme les formulaires MVC.
+                .csrf(Customizer.withDefaults())
                 .formLogin(form -> form
                         .loginPage("/login")
                         // FIX CRITIQUE : URL différente de loginPage → évite la boucle
