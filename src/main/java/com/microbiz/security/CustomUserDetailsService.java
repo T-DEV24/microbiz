@@ -29,6 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 utilisateur.getEmail(),
                 utilisateur.getMotDePasse(),   // deja hache en BCrypt
                 utilisateur.getTenantKey(),
+                utilisateur.isEnabled(),
                 Collections.singletonList(authority)
         );
     }

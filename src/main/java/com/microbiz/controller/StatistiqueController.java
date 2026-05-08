@@ -8,12 +8,14 @@ import com.microbiz.service.StatistiqueService;
 import com.microbiz.service.VenteService;
 import com.microbiz.service.PredictiveSalesService;
 import com.microbiz.service.CurrencyRateService;
+import com.microbiz.security.PmeAccess;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,14 +39,17 @@ public class StatistiqueController {
     @Autowired private RapportService rapportService;
     @Autowired private PredictiveSalesService predictiveSalesService;
     @Autowired private CurrencyRateService currencyRateService;
+    @Autowired private PmeAccess pmeAccess;
 
     @GetMapping
     public String statistiques(@RequestParam(defaultValue = "mois") String periode,
                                @RequestParam(defaultValue = "5") int top,
                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate debut,
                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin,
-                               Model model) {
+                               Model model,
+                               Authentication authentication) {
 
+        boolean accesFinance = pmeAccess.canAccessFinance(authentication);
         int topN = Math.min(Math.max(top, 3), 10);
         if (debut != null && fin != null && debut.isAfter(fin)) {
             model.addAttribute("erreur", "La date de début doit être antérieure ou égale à la date de fin.");
@@ -60,13 +65,13 @@ public class StatistiqueController {
 
         if (debut != null && fin != null) {
             caTotal = statistiqueService.getChiffreAffairesParPeriode(debut, fin);
-            depenses = statistiqueService.getTotalDepensesParPeriode(debut, fin);
+            depenses = accesFinance ? statistiqueService.getTotalDepensesParPeriode(debut, fin) : 0.0;
             evolution = statistiqueService.getEvolutionParFiltre(periode, debut, fin);
-            depensesCategories = depenseService.getDepensesParCategorie(debut, fin);
+            depensesCategories = accesFinance ? depenseService.getDepensesParCategorie(debut, fin) : Map.of();
         } else {
             caTotal = statistiqueService.getChiffreAffairesTotal();
-            depenses = depenseService.getTotalDepenses();
-            depensesCategories = depenseService.getDepensesParCategorie();
+            depenses = accesFinance ? depenseService.getTotalDepenses() : 0.0;
+            depensesCategories = accesFinance ? depenseService.getDepensesParCategorie() : Map.of();
             if ("semaine".equals(periode)) {
                 evolution = statistiqueService.getEvolutionHebdomadaire(8);
             } else if ("semestre".equals(periode)) {
@@ -80,6 +85,7 @@ public class StatistiqueController {
         double marge = caTotal > 0 ? (benefice / caTotal) * 100.0 : 0.0;
 
         model.addAttribute("caTotal", caTotal);
+        model.addAttribute("accesFinance", accesFinance);
         model.addAttribute("caMois", statistiqueService.getChiffreAffairesDuMois());
         model.addAttribute("benefice", benefice);
         model.addAttribute("marge", marge);
@@ -97,7 +103,7 @@ public class StatistiqueController {
         model.addAttribute("previsionsVentes", predictiveSalesService.previsionMensuelle(3));
         model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
 
-        if (debut != null && fin != null) {
+        if (accesFinance && debut != null && fin != null) {
             LocalDate previousEnd = debut.minusDays(1);
             long days = ChronoUnit.DAYS.between(debut, fin) + 1;
             LocalDate previousStart = previousEnd.minusDays(days - 1);

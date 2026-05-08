@@ -48,24 +48,17 @@ public class DepenseService {
     }
 
     public Double getTotalParPeriode(LocalDate debut, LocalDate fin) {
-        return depenseRepository.findByTenantKeyAndDateDepenseBetweenOrderByDateDepenseDesc(TenantContext.getTenant(), debut, fin).stream()
-                .mapToDouble(d -> currencyRateService.toBase(d.getMontant() != null ? d.getMontant() : 0.0, d.getDevise()))
-                .sum();
+        return sumRowsToBase(depenseRepository.sumByDeviseForPeriod(TenantContext.getTenant(), debut, fin));
     }
 
     public Double getTotalDepenses() {
-        return findAll().stream()
-                .mapToDouble(d -> currencyRateService.toBase(d.getMontant() != null ? d.getMontant() : 0.0, d.getDevise()))
-                .sum();
+        return sumRowsToBase(depenseRepository.sumByDevise(TenantContext.getTenant()));
     }
 
     public Double getDepensesDuMois() {
         int month = LocalDate.now().getMonthValue();
         int year = LocalDate.now().getYear();
-        return findAll().stream()
-                .filter(d -> d.getDateDepense() != null && d.getDateDepense().getMonthValue() == month && d.getDateDepense().getYear() == year)
-                .mapToDouble(d -> currencyRateService.toBase(d.getMontant() != null ? d.getMontant() : 0.0, d.getDevise()))
-                .sum();
+        return sumRowsToBase(depenseRepository.sumByDeviseForMonth(TenantContext.getTenant(), month, year));
     }
 
 
@@ -87,5 +80,11 @@ public class DepenseService {
             result.put((String) row[0], ((Number) row[1]).doubleValue());
         }
         return result;
+    }
+
+    private double sumRowsToBase(List<Object[]> rows) {
+        return rows.stream()
+                .mapToDouble(row -> currencyRateService.toBase(((Number) row[1]).doubleValue(), (String) row[0]))
+                .sum();
     }
 }

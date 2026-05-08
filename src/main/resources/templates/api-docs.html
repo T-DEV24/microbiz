@@ -3,19 +3,44 @@
       th:replace="fragments/dashboard-layout :: layout(~{::content}, 'API Docs', 'Documentation API', 'api-docs')">
 <div th:fragment="content">
     <div class="container-fluid p-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <div>
                 <h2 class="mb-1">Documentation API</h2>
                 <div class="text-muted" style="font-size:13px">
-                    Intégrée au front office (accès sans quitter l’interface métier).
+                    Interface HTML intégrée : Swagger, parcours métier et règles d'accès par rôle PME.
                 </div>
             </div>
-            <a class="btn btn-outline-secondary btn-sm" href="/swagger-ui/index.html" target="_blank" rel="noopener">
-                Ouvrir dans un nouvel onglet
-            </a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary btn-sm" href="/v3/api-docs" target="_blank" rel="noopener">OpenAPI JSON</a>
+                <a class="btn btn-primary btn-sm" href="/swagger-ui/index.html" target="_blank" rel="noopener">Swagger UI</a>
+            </div>
         </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm"><div class="card-body"><h6>Factures</h6><code>/api/v1/factures</code><p class="small text-muted mt-2 mb-0">Lecture : finance + commercial. Écriture : finance.</p></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm"><div class="card-body"><h6>Paiements</h6><code>/api/v1/paiements</code><p class="small text-muted mt-2 mb-0">Encaissements réservés aux rôles finance.</p></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm"><div class="card-body"><h6>Fournisseurs</h6><code>/api/v1/fournisseurs</code><p class="small text-muted mt-2 mb-0">Gestion interne, portail fournisseur séparé en lecture limitée.</p></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm"><div class="card-body"><h6>Achats / Stock</h6><code>/api/v1/achats</code><p class="small text-muted mt-2 mb-0">Opérations réservées gérant/utilisateur/admin.</p></div></div>
+            </div>
+        </div>
+
+        <div class="alert alert-warning small">
+            Les API REST réutilisent la session web : les requêtes POST/PATCH/DELETE doivent inclure le token CSRF exposé dans les meta tags du layout.
+        </div>
+
         <div class="card shadow-sm">
-            <div class="ratio ratio-16x9" style="min-height:75vh">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Swagger embarqué</strong>
+                <span class="badge bg-success-subtle text-success">HTML interactif</span>
+            </div>
+            <div class="ratio ratio-16x9" style="min-height:72vh">
                 <iframe src="/swagger-ui/index.html" title="API documentation" style="border:0;"></iframe>
             </div>
         </div>

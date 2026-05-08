@@ -30,6 +30,8 @@ public class SaasAdminController {
         model.addAttribute("statuses", SaasSubscription.SubscriptionStatus.values());
         model.addAttribute("planPrices", saasSubscriptionService.getPlanPrices(baseCurrency));
         model.addAttribute("subscriptions", saasSubscriptionService.findAll());
+        model.addAttribute("statusCounts", saasSubscriptionService.countByStatus());
+        model.addAttribute("mrr", saasSubscriptionService.monthlyRecurringRevenue());
         return "saas-admin";
     }
 

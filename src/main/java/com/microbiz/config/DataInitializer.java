@@ -1,6 +1,7 @@
 package com.microbiz.config;
 import com.microbiz.model.*;
 import com.microbiz.repository.*;
+import com.microbiz.model.PmeRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -12,6 +13,7 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private ProduitRepository produitRepo;
     @Autowired private CategorieRepository categorieRepo;
     @Autowired private ClientRepository clientRepo;
+    @Autowired private FournisseurRepository fournisseurRepo;
     @Autowired private PasswordEncoder passwordEncoder;
     @Value("${microbiz.seed.demo-data:false}") private boolean seedDemoData;
     @Value("${microbiz.seed.admin-password:}") private String adminPassword;
@@ -34,7 +36,7 @@ public class DataInitializer implements CommandLineRunner {
                     .nom("Administrateur")
                     .email("admin@microbiz.com")
                     .motDePasse(passwordEncoder.encode(adminPassword))  // hache !
-                    .role("ROLE_ADMIN")
+                    .role(PmeRole.ADMIN.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(admin);
@@ -42,21 +44,48 @@ public class DataInitializer implements CommandLineRunner {
                     .nom("Jean Dupont")
                     .email("jean@microbiz.com")
                     .motDePasse(passwordEncoder.encode(userPassword))
-                    .role("ROLE_USER")
+                    .role(PmeRole.USER.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(user);
+            Utilisateur gerant = Utilisateur.builder()
+                    .nom("Co-gérant")
+                    .email("gerant@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(userPassword))
+                    .role(PmeRole.GERANT.getAuthority())
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(gerant);
+            Utilisateur comptable = Utilisateur.builder()
+                    .nom("Comptable externe")
+                    .email("comptable@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(userPassword))
+                    .role(PmeRole.COMPTABLE.getAuthority())
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(comptable);
             Utilisateur commercial = Utilisateur.builder()
                     .nom("Awa Commercial")
                     .email("commercial@microbiz.com")
                     .motDePasse(passwordEncoder.encode(userPassword))
-                    .role("ROLE_COMMERCIAL")
+                    .role(PmeRole.COMMERCIAL.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(commercial);
+            Utilisateur fournisseurUser = Utilisateur.builder()
+                    .nom("Distrib Pro")
+                    .email("fournisseur@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(userPassword))
+                    .role(PmeRole.FOURNISSEUR.getAuthority())
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(fournisseurUser);
             System.out.println("  ADMIN -> admin@microbiz.com / [mot de passe via variable d'environnement]");
             System.out.println("  USER  -> jean@microbiz.com  / [mot de passe via variable d'environnement]");
+            System.out.println("  GER   -> gerant@microbiz.com / [mot de passe via variable d'environnement]");
+            System.out.println("  CPT   -> comptable@microbiz.com / [mot de passe via variable d'environnement]");
             System.out.println("  COM   -> commercial@microbiz.com / [mot de passe via variable d'environnement]");
+            System.out.println("  FOUR  -> fournisseur@microbiz.com / [mot de passe via variable d'environnement]");
         }
         // Produits de demo
         if (produitRepo.count() == 0) {
@@ -78,6 +107,15 @@ public class DataInitializer implements CommandLineRunner {
             produitRepo.save(Produit.builder().nom("Eau de coco")
                     .categorie("Boissons").prixVente(600.0)
                     .coutRevient(280.0).stockActuel(5).tenantKey("default").build());
+        }
+        // Fournisseur de demo pour le portail fournisseur
+        if (fournisseurRepo.count() == 0) {
+            fournisseurRepo.save(Fournisseur.builder()
+                    .nom("Distrib Pro")
+                    .telephone("+237 650 000 111")
+                    .email("fournisseur@microbiz.com")
+                    .tenantKey("default")
+                    .build());
         }
         // Clients de demo
         if (clientRepo.count() == 0) {

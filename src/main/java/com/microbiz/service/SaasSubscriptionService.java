@@ -22,6 +22,22 @@ public class SaasSubscriptionService {
         return repository.findAllByOrderByTenantKeyAsc();
     }
 
+    public Map<SaasSubscription.SubscriptionStatus, Long> countByStatus() {
+        List<SaasSubscription> subscriptions = findAll();
+        Map<SaasSubscription.SubscriptionStatus, Long> result = new EnumMap<>(SaasSubscription.SubscriptionStatus.class);
+        for (SaasSubscription.SubscriptionStatus status : SaasSubscription.SubscriptionStatus.values()) {
+            result.put(status, subscriptions.stream().filter(s -> s.getStatus() == status).count());
+        }
+        return result;
+    }
+
+    public double monthlyRecurringRevenue() {
+        return findAll().stream()
+                .filter(s -> s.getStatus() == SaasSubscription.SubscriptionStatus.ACTIVE || s.getStatus() == SaasSubscription.SubscriptionStatus.TRIAL)
+                .mapToDouble(s -> s.getMonthlyPrice() == null ? 0.0 : s.getMonthlyPrice())
+                .sum();
+    }
+
     public Map<SaasSubscription.PlanCode, Double> getPlanPrices(String currency) {
         Map<SaasSubscription.PlanCode, Double> prices = new EnumMap<>(SaasSubscription.PlanCode.class);
         prices.put(SaasSubscription.PlanCode.FREE, 0.0);
