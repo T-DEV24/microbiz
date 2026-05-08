@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -63,35 +64,46 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/error"
                         ).permitAll()
-                        // Routes ADMIN uniquement
+                        // Administration système : réservée au propriétaire du tenant.
                         .requestMatchers("/utilisateurs/**", "/audit-logs/**", "/saas/admin/**").hasRole("ADMIN")
-                        // Accès commun métier (ADMIN + USER)
+                        // ACC-03 : les commerciaux peuvent consulter les factures/PDF liées au tenant,
+                        // sans obtenir les droits d'écriture finance (statut, encaissement, création).
+                        .requestMatchers(HttpMethod.GET, "/factures", "/factures/**", "/api/v1/factures", "/api/v1/factures/**")
+                        .hasAnyRole("ADMIN", "GERANT", "USER", "COMPTABLE", "COMMERCIAL")
+                        // Finance/comptabilité : disponible au gérant, à l'utilisateur métier et au comptable externe.
                         .requestMatchers(
                                 "/depenses/**",
                                 "/factures/**",
-                                "/fournisseurs/**",
-                                "/mouvements-stock/**",
                                 "/comptabilite/ohada/**",
-                                "/entreprise/**",
                                 "/devises/**",
                                 "/api/v1/factures/**",
+                                "/api/v1/paiements/**"
+                        ).hasAnyRole("ADMIN", "GERANT", "USER", "COMPTABLE")
+                        // Opérations métier hors administration système.
+                        .requestMatchers(
+                                "/fournisseurs/**",
+                                "/mouvements-stock/**",
+                                "/entreprise/**",
                                 "/api/v1/fournisseurs/**",
-                                "/api/v1/paiements/**",
                                 "/api/v1/stock-alertes/**",
                                 "/api/v1/achats/**"
-                        ).hasAnyRole("ADMIN", "USER")
-                        // ROLE_COMMERCIAL : accès ventes/clients/produits
-                        .requestMatchers("/ventes/**", "/clients/**", "/produits/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
-                        .requestMatchers("/api/kpis").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
-                        // ROLE_COMMERCIAL : stats en lecture seule
-                        .requestMatchers(HttpMethod.GET, "/statistiques/**").hasAnyRole("ADMIN", "USER", "COMMERCIAL")
-                        .requestMatchers(HttpMethod.POST, "/statistiques/**").hasAnyRole("ADMIN", "USER")
+                        ).hasAnyRole("ADMIN", "GERANT", "USER")
+                        // Vente terrain : le commercial conserve ventes/clients/produits, mais pas dépenses/utilisateurs.
+                        .requestMatchers("/ventes/**", "/clients/**", "/produits/**")
+                        .hasAnyRole("ADMIN", "GERANT", "USER", "COMMERCIAL")
+                        .requestMatchers("/api/kpis").hasAnyRole("ADMIN", "GERANT", "USER", "COMPTABLE", "COMMERCIAL")
+                        // Statistiques en lecture : gérant, comptable et commercial peuvent superviser sans administrer.
+                        .requestMatchers(HttpMethod.GET, "/statistiques/**")
+                        .hasAnyRole("ADMIN", "GERANT", "USER", "COMPTABLE", "COMMERCIAL")
+                        .requestMatchers(HttpMethod.POST, "/statistiques/**").hasAnyRole("ADMIN", "GERANT", "USER")
                         // Dashboard connecté
                         .requestMatchers("/", "/dashboard").authenticated()
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
+                // Les endpoints REST /api/v1/** réutilisent l'authentification par session :
+                // ils doivent donc conserver la protection CSRF comme les formulaires MVC.
+                .csrf(Customizer.withDefaults())
                 .formLogin(form -> form
                         .loginPage("/login")
                         // FIX CRITIQUE : URL différente de loginPage → évite la boucle

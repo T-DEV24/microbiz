@@ -82,6 +82,8 @@ public class UtilisateurService {
 
     private String resolveRole(String role) {
         if ("ROLE_ADMIN".equals(role)) return "ROLE_ADMIN";
+        if ("ROLE_GERANT".equals(role)) return "ROLE_GERANT";
+        if ("ROLE_COMPTABLE".equals(role)) return "ROLE_COMPTABLE";
         if ("ROLE_COMMERCIAL".equals(role)) return "ROLE_COMMERCIAL";
         return "ROLE_USER";
     }

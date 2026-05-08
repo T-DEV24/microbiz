@@ -27,6 +27,11 @@ public class VenteService {
         String tenant = TenantContext.getTenant();
         return venteRepository.findAllByTenantKeyOrderByDateVenteDesc(tenant);
     }
+
+    public Page<Vente> findAll(Pageable pageable) {
+        return venteRepository.findAllByTenantKey(TenantContext.getTenant(), pageable);
+    }
+
     public long countAll()         { return venteRepository.countByTenantKey(TenantContext.getTenant()); }
 
     public long countAll(LocalDate debut, LocalDate fin) {
@@ -111,24 +116,25 @@ public class VenteService {
     }
 
     public List<Map<String, Object>> getTopProduits(int n, LocalDate debut, LocalDate fin) {
-        List<Vente> ventes = (debut != null && fin != null)
-                ? getVentesParPeriode(debut, fin)
-                : findAll();
+        int limit = Math.max(1, n);
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, Math.max(limit * 8, 50));
+        List<Object[]> rows = (debut != null && fin != null)
+                ? venteRepository.findTopProduitsParPeriode(TenantContext.getTenant(), debut, fin, pageable)
+                : venteRepository.findTopProduits(TenantContext.getTenant(), pageable);
 
         Map<Produit, long[]> quantites = new LinkedHashMap<>();
         Map<Produit, Double> caConsolide = new LinkedHashMap<>();
-        for (Vente vente : ventes) {
-            if (vente.getProduit() == null) continue;
-            Produit produit = vente.getProduit();
-            long qte = vente.getQuantite() != null ? vente.getQuantite() : 0;
-            double caBase = currencyRateService.toBase(vente.getMontantTotal(), vente.getDevise());
-            quantites.computeIfAbsent(produit, p -> new long[]{0})[0] += qte;
+        for (Object[] row : rows) {
+            if (!(row[0] instanceof Produit produit)) continue;
+            quantites.computeIfAbsent(produit, p -> new long[]{0})[0] += ((Number) row[1]).longValue();
+            String devise = row.length > 3 && row[3] instanceof String d ? d : currencyRateService.getBaseCurrency();
+            double caBase = currencyRateService.toBase(((Number) row[2]).doubleValue(), devise);
             caConsolide.put(produit, caConsolide.getOrDefault(produit, 0.0) + caBase);
         }
 
         return caConsolide.entrySet().stream()
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                .limit(n)
+                .limit(limit)
                 .map(e -> {
                     Map<String, Object> item = new LinkedHashMap<>();
                     item.put("produit", e.getKey());
