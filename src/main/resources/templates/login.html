@@ -132,21 +132,34 @@
     <div class="mt-5 pt-4" style="border-top:1px solid rgba(255,255,255,.06)">
         <div style="font-size:11px;color:rgba(255,255,255,.25);text-align:center;text-transform:uppercase;
                 letter-spacing:.06em;margin-bottom:10px">Comptes de démonstration</div>
-        <div class="d-flex gap-2">
-            <div class="demo-chip" onclick="fillLogin('admin@microbiz.com','admin123')">
+        <div class="d-grid gap-2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+            <button type="button" class="demo-chip text-start" onclick="fillLogin('admin@microbiz.com','admin123', true)">
                 <strong>Administrateur</strong>admin@microbiz.com<br>admin123
-            </div>
-            <div class="demo-chip" onclick="fillLogin('jean@microbiz.com','user123')">
+            </button>
+            <button type="button" class="demo-chip text-start" onclick="fillLogin('gerant@microbiz.com','user123', true)">
+                <strong>Gérant</strong>gerant@microbiz.com<br>user123
+            </button>
+            <button type="button" class="demo-chip text-start" onclick="fillLogin('jean@microbiz.com','user123', true)">
                 <strong>Utilisateur</strong>jean@microbiz.com<br>user123
-            </div>
+            </button>
+            <button type="button" class="demo-chip text-start" onclick="fillLogin('comptable@microbiz.com','user123', true)">
+                <strong>Comptable</strong>comptable@microbiz.com<br>user123
+            </button>
+            <button type="button" class="demo-chip text-start" onclick="fillLogin('commercial@microbiz.com','user123', true)">
+                <strong>Commercial</strong>commercial@microbiz.com<br>user123
+            </button>
+            <button type="button" class="demo-chip text-start" onclick="fillLogin('fournisseur@microbiz.com','user123', true)">
+                <strong>Fournisseur</strong>fournisseur@microbiz.com<br>user123
+            </button>
         </div>
     </div>
 </div>
 
 <script>
-    function fillLogin(email, pwd) {
+    function fillLogin(email, pwd, submit = false) {
         document.querySelector('input[name=username]').value = email;
         document.querySelector('input[name=password]').value = pwd;
+        if (submit) document.querySelector('form[action$="login-process"]')?.submit();
     }
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js'));

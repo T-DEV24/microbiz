@@ -6,6 +6,15 @@
         <h2 class="mb-3">Administration SaaS v2</h2>
         <div class="alert alert-info">
             Gestion des abonnements tenant : création/mise à jour, statut, date d'essai, annulation.
+            <strong>Accès strict :</strong> seul ROLE_ADMIN peut créer, bloquer, modifier ou supprimer des comptes et piloter le SaaS.
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <div class="card p-3 shadow-sm"><div class="text-muted small">MRR estimé</div><div class="h4 mb-0" th:text="${#numbers.formatDecimal(mrr,0,'COMMA',0,'POINT')} + ' ' + ${baseCurrency}">0 XAF</div></div>
+            </div>
+            <div class="col-md-3" th:each="st : ${statuses}">
+                <div class="card p-3 shadow-sm"><div class="text-muted small" th:text="${st}">ACTIVE</div><div class="h4 mb-0" th:text="${statusCounts[st] ?: 0}">0</div></div>
+            </div>
         </div>
         <th:block th:replace="fragments/ui-components :: flashMessages(${succes}, ${erreur})"></th:block>
 
@@ -52,10 +61,15 @@
             <div class="col-md-4" th:each="plan : ${plans}">
                 <div class="card p-3 shadow-sm h-100">
                     <h5 th:text="${plan}"></h5>
-                    <p class="text-muted mb-0">
+                    <p class="text-muted mb-2">
                         <span th:text="${#numbers.formatDecimal(planPrices[plan],0,'COMMA',0,'POINT')}">0</span>
                         <span th:text="${baseCurrency}">XAF</span> / mois
                     </p>
+                    <ul class="small text-muted mb-0">
+                        <li th:if="${plan.name() == 'FREE'}">1 tenant de test, fonctions essentielles.</li>
+                        <li th:if="${plan.name() == 'PRO'}">Multi-utilisateurs PME, finance et facturation.</li>
+                        <li th:if="${plan.name() == 'BUSINESS'}">Pilotage avancé, audit, API et support prioritaire.</li>
+                    </ul>
                 </div>
             </div>
         </div>
