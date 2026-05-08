@@ -20,23 +20,48 @@ public class Utilisateur {
     @NotBlank
     @Column(name = "mot_de_passe", nullable = false)
     private String motDePasse;
-    // ROLE_ADMIN  ou  ROLE_USER
+    // ROLE_ADMIN, ROLE_GERANT, ROLE_USER, ROLE_COMPTABLE, ROLE_COMMERCIAL ou ROLE_FOURNISSEUR
     @NotBlank
     private String role;
 
     @Column(name = "tenant_key", nullable = false)
     private String tenantKey = "default";
 
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private Boolean enabled = Boolean.TRUE;
+
     @PrePersist
+    @PreUpdate
     public void prePersist() {
         if (tenantKey == null || tenantKey.isBlank()) {
             tenantKey = "default";
         }
+        if (enabled == null) {
+            enabled = Boolean.TRUE;
+        }
     }
     public boolean isAdmin() {
-        return "ROLE_ADMIN".equals(role);
+        return PmeRole.ADMIN.matches(role);
+    }
+    public boolean isGerant() {
+        return PmeRole.GERANT.matches(role);
+    }
+    public boolean isComptable() {
+        return PmeRole.COMPTABLE.matches(role);
     }
     public boolean isCommercial() {
-        return "ROLE_COMMERCIAL".equals(role);
+        return PmeRole.COMMERCIAL.matches(role);
+    }
+    public boolean isFournisseur() {
+        return PmeRole.FOURNISSEUR.matches(role);
+    }
+    public boolean isEnabled() {
+        return enabled == null || enabled;
+    }
+    public String getRoleLabel() {
+        return PmeRole.fromAuthority(role)
+                .map(PmeRole::getLabel)
+                .orElse(PmeRole.USER.getLabel());
     }
 }

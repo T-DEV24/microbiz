@@ -14,6 +14,7 @@ public interface VenteRepository extends JpaRepository<Vente, Long> {
     java.util.Optional<Vente> findByIdAndTenantKey(Long id, String tenantKey);
 
     List<Vente> findAllByTenantKeyOrderByDateVenteDesc(String tenantKey);
+    Page<Vente> findAllByTenantKey(String tenantKey, Pageable pageable);
     List<Vente> findTop20ByTenantKeyOrderByDateVenteDesc(String tenantKey);
 
     List<Vente> findByTenantKeyAndDateVenteBetweenOrderByDateVenteDesc(String tenantKey, LocalDate debut, LocalDate fin);
@@ -78,13 +79,13 @@ public interface VenteRepository extends JpaRepository<Vente, Long> {
     List<Object[]> getEvolutionHebdomadaire(@Param("tenantKey") String tenantKey, @Param("depuis") LocalDate depuis);
 
     // Top produits
-    @Query("SELECT v.produit, SUM(v.quantite), SUM(v.quantite * v.prixUnitaire) " +
-            "FROM Vente v WHERE v.tenantKey = :tenantKey GROUP BY v.produit ORDER BY SUM(v.quantite) DESC")
+    @Query("SELECT v.produit, SUM(v.quantite), SUM(v.quantite * v.prixUnitaire), v.devise " +
+            "FROM Vente v WHERE v.tenantKey = :tenantKey GROUP BY v.produit, v.devise ORDER BY SUM(v.quantite) DESC")
     List<Object[]> findTopProduits(@Param("tenantKey") String tenantKey, Pageable pageable);
 
-    @Query("SELECT v.produit, SUM(v.quantite), SUM(v.quantite * v.prixUnitaire) " +
+    @Query("SELECT v.produit, SUM(v.quantite), SUM(v.quantite * v.prixUnitaire), v.devise " +
             "FROM Vente v WHERE v.tenantKey = :tenantKey AND v.dateVente BETWEEN :debut AND :fin " +
-            "GROUP BY v.produit ORDER BY SUM(v.quantite) DESC")
+            "GROUP BY v.produit, v.devise ORDER BY SUM(v.quantite) DESC")
     List<Object[]> findTopProduitsParPeriode(@Param("tenantKey") String tenantKey,
                                              @Param("debut") LocalDate debut,
                                              @Param("fin") LocalDate fin,

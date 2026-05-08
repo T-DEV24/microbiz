@@ -1,6 +1,7 @@
 package com.microbiz.config;
 import com.microbiz.model.*;
 import com.microbiz.repository.*;
+import com.microbiz.model.PmeRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -12,18 +13,24 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private ProduitRepository produitRepo;
     @Autowired private CategorieRepository categorieRepo;
     @Autowired private ClientRepository clientRepo;
+    @Autowired private FournisseurRepository fournisseurRepo;
     @Autowired private PasswordEncoder passwordEncoder;
     @Value("${microbiz.seed.demo-data:false}") private boolean seedDemoData;
     @Value("${microbiz.seed.admin-password:}") private String adminPassword;
     @Value("${microbiz.seed.user-password:}") private String userPassword;
+    @Value("${spring.datasource.url:}") private String datasourceUrl;
     @Override
     public void run(String... args) {
-        if (!seedDemoData) {
+        boolean embeddedLocalDatabase = isEmbeddedLocalDatabase();
+        boolean shouldSeedDemoData = seedDemoData || embeddedLocalDatabase;
+        if (!shouldSeedDemoData) {
             return;
         }
 
-        if (adminPassword == null || adminPassword.isBlank()
-                || userPassword == null || userPassword.isBlank()) {
+        String effectiveAdminPassword = normalizeSeedPassword(adminPassword, embeddedLocalDatabase ? "admin123" : "");
+        String effectiveUserPassword = normalizeSeedPassword(userPassword, embeddedLocalDatabase ? "user123" : "");
+
+        if (effectiveAdminPassword.isBlank() || effectiveUserPassword.isBlank()) {
             System.out.println("[Microbiz] Initialisation de démo ignorée : définissez MICROBIZ_ADMIN_PASSWORD et MICROBIZ_USER_PASSWORD.");
             return;
         }
@@ -33,30 +40,57 @@ public class DataInitializer implements CommandLineRunner {
             Utilisateur admin = Utilisateur.builder()
                     .nom("Administrateur")
                     .email("admin@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(adminPassword))  // hache !
-                    .role("ROLE_ADMIN")
+                    .motDePasse(passwordEncoder.encode(effectiveAdminPassword))  // hache !
+                    .role(PmeRole.ADMIN.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(admin);
             Utilisateur user = Utilisateur.builder()
                     .nom("Jean Dupont")
                     .email("jean@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(userPassword))
-                    .role("ROLE_USER")
+                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .role(PmeRole.USER.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(user);
+            Utilisateur gerant = Utilisateur.builder()
+                    .nom("Co-gérant")
+                    .email("gerant@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .role(PmeRole.GERANT.getAuthority())
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(gerant);
+            Utilisateur comptable = Utilisateur.builder()
+                    .nom("Comptable externe")
+                    .email("comptable@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .role(PmeRole.COMPTABLE.getAuthority())
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(comptable);
             Utilisateur commercial = Utilisateur.builder()
                     .nom("Awa Commercial")
                     .email("commercial@microbiz.com")
-                    .motDePasse(passwordEncoder.encode(userPassword))
-                    .role("ROLE_COMMERCIAL")
+                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .role(PmeRole.COMMERCIAL.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(commercial);
-            System.out.println("  ADMIN -> admin@microbiz.com / [mot de passe via variable d'environnement]");
-            System.out.println("  USER  -> jean@microbiz.com  / [mot de passe via variable d'environnement]");
-            System.out.println("  COM   -> commercial@microbiz.com / [mot de passe via variable d'environnement]");
+            Utilisateur fournisseurUser = Utilisateur.builder()
+                    .nom("Distrib Pro")
+                    .email("fournisseur@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(effectiveUserPassword))
+                    .role(PmeRole.FOURNISSEUR.getAuthority())
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(fournisseurUser);
+            System.out.println("  ADMIN -> admin@microbiz.com / " + maskPasswordSource(adminPassword, embeddedLocalDatabase, "admin123"));
+            System.out.println("  USER  -> jean@microbiz.com  / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
+            System.out.println("  GER   -> gerant@microbiz.com / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
+            System.out.println("  CPT   -> comptable@microbiz.com / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
+            System.out.println("  COM   -> commercial@microbiz.com / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
+            System.out.println("  FOUR  -> fournisseur@microbiz.com / " + maskPasswordSource(userPassword, embeddedLocalDatabase, "user123"));
         }
         // Produits de demo
         if (produitRepo.count() == 0) {
@@ -79,6 +113,15 @@ public class DataInitializer implements CommandLineRunner {
                     .categorie("Boissons").prixVente(600.0)
                     .coutRevient(280.0).stockActuel(5).tenantKey("default").build());
         }
+        // Fournisseur de demo pour le portail fournisseur
+        if (fournisseurRepo.count() == 0) {
+            fournisseurRepo.save(Fournisseur.builder()
+                    .nom("Distrib Pro")
+                    .telephone("+237 650 000 111")
+                    .email("fournisseur@microbiz.com")
+                    .tenantKey("default")
+                    .build());
+        }
         // Clients de demo
         if (clientRepo.count() == 0) {
             clientRepo.save(Client.builder().nom("Marie Ngo")
@@ -89,4 +132,25 @@ public class DataInitializer implements CommandLineRunner {
                     .telephone("+237 690 345 678").tenantKey("default").build());
         }
     }
+    private boolean isEmbeddedLocalDatabase() {
+        return datasourceUrl != null && datasourceUrl.startsWith("jdbc:h2:");
+    }
+
+    private String normalizeSeedPassword(String configuredPassword, String fallbackPassword) {
+        if (configuredPassword != null && !configuredPassword.isBlank()) {
+            return configuredPassword;
+        }
+        return fallbackPassword == null ? "" : fallbackPassword;
+    }
+
+    private String maskPasswordSource(String configuredPassword, boolean embeddedLocalDatabase, String fallbackPassword) {
+        if (configuredPassword != null && !configuredPassword.isBlank()) {
+            return "[mot de passe via variable d'environnement]";
+        }
+        if (embeddedLocalDatabase) {
+            return fallbackPassword + " [démo locale H2]";
+        }
+        return "[non configuré]";
+    }
+
 }

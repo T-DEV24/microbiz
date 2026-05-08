@@ -180,20 +180,24 @@ public class FactureService {
             doc.add(new Paragraph("Devise: " + (facture.getDevise() != null ? facture.getDevise() : "XAF")));
             doc.add(new Paragraph(" "));
 
-            PdfPTable table = new PdfPTable(6);
+            PdfPTable table = new PdfPTable(8);
             table.setWidthPercentage(100);
             table.addCell("Description");
             table.addCell("Qté");
-            table.addCell("PU");
+            table.addCell("PU HT");
             table.addCell("Remise %");
+            table.addCell("HT ligne");
             table.addCell("TVA %");
+            table.addCell("TVA ligne");
             table.addCell("Total TTC");
             for (FactureLigne l : facture.getLignes()) {
                 table.addCell(l.getDescription());
                 table.addCell(String.valueOf(l.getQuantite()));
                 table.addCell(String.valueOf(l.getPrixUnitaire()));
                 table.addCell(String.format("%,.2f", l.getRemise() == null ? 0.0 : l.getRemise()).replace(',', ' '));
+                table.addCell(String.format("%,.0f", l.getMontantHt()).replace(',', ' '));
                 table.addCell(String.format("%,.2f", l.getTauxTva() == null ? 0.0 : l.getTauxTva()).replace(',', ' '));
+                table.addCell(String.format("%,.0f", l.getMontantTva()).replace(',', ' '));
                 table.addCell(String.format("%,.0f", l.getTotalLigne()).replace(',', ' '));
             }
             doc.add(table);
