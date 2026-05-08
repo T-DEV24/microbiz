@@ -8,7 +8,7 @@
         <div class="alert alert-info">
             Les taux sont synchronisés automatiquement (job planifié). Aucune saisie manuelle n'est requise.
             <span th:if="${lastRefreshAt != null}">
-                Dernière synchro : <strong th:text="${#temporals.format(lastRefreshAt, 'dd/MM/yyyy HH:mm')}"></strong>.
+                Dernière synchro : <strong id="lastRefresh" th:text="${#temporals.format(lastRefreshAt, 'dd/MM/yyyy HH:mm')}"></strong>.
             </span>
         </div>
 
@@ -27,7 +27,7 @@
         <div class="card p-3 shadow-sm">
             <table class="table table-sm mb-0">
                 <thead><tr><th>Devise</th><th>Taux</th></tr></thead>
-                <tbody>
+                <tbody id="ratesBody">
                 <tr th:each="entry : ${rates}">
                     <td th:text="${entry.key}"></td>
                     <td th:text="${entry.value}"></td>
@@ -37,4 +37,24 @@
         </div>
     </div>
 </div>
+<script>
+async function refreshRatesLive() {
+    try {
+        const res = await fetch('/devises/rates', {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+        if (!res.ok) return;
+        const data = await res.json();
+        const body = document.getElementById('ratesBody');
+        if (body && data.rates) {
+            body.innerHTML = Object.entries(data.rates)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([code, rate]) => `<tr><td>${code}</td><td>${Number(rate).toFixed(6)}</td></tr>`)
+                .join('');
+        }
+        const last = document.getElementById('lastRefresh');
+        if (last && data.lastRefreshAt) last.textContent = new Date(data.lastRefreshAt).toLocaleString('fr-FR');
+    } catch (_) {}
+}
+setInterval(refreshRatesLive, 30000);
+refreshRatesLive();
+</script>
 </html>

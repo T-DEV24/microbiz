@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Factures', 'Facturation', 'factures')">
 <div th:fragment="content">
     <style>
@@ -54,7 +54,7 @@
         </form>
 
         <div class="grid-2">
-            <div class="card" style="margin-bottom:0">
+            <div class="card" style="margin-bottom:0" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE')">
                 <div class="card-header"><div class="card-title">Nouveau document</div></div>
                 <div class="card-body">
                     <form th:action="@{/factures}" method="post" th:object="${facture}">
@@ -126,7 +126,7 @@
                         <td th:text="${f.dateEmission != null ? #temporals.format(f.dateEmission,'dd/MM/yyyy') : '—'}">—</td>
                         <td>
                             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                            <form th:action="@{/factures/{id}/statut(id=${f.id})}" method="post" style="display:flex;gap:8px;align-items:center">
+                            <form th:action="@{/factures/{id}/statut(id=${f.id})}" method="post" style="display:flex;gap:8px;align-items:center" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE')">
                                 <select name="statut" class="form-control-dark" style="margin-bottom:0;padding:6px 8px;font-size:12px">
                                     <option th:each="s : ${statuts}" th:value="${s}" th:text="${s}" th:selected="${s == f.statut}"></option>
                                 </select>
@@ -135,6 +135,7 @@
                             <a class="action-btn btn-edit" th:href="@{/factures/{id}/pdf(id=${f.id})}">PDF</a>
                             <button type="button"
                                     class="action-btn"
+                                    sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE')"
                                     th:attr="data-facture-id=${f.id},data-facture-numero=${f.numero},data-facture-devise=${f.devise}"
                                     onclick="openPaiementModal(this)">
                                 Encaisser
@@ -161,7 +162,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="paiementModal" tabindex="-1" aria-labelledby="paiementModalLabel" aria-hidden="true">
+    <div class="modal fade" id="paiementModal" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE')" tabindex="-1" aria-labelledby="paiementModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -238,6 +239,13 @@
     const paiementModal = paiementModalEl ? new bootstrap.Modal(paiementModalEl) : null;
     const fmt = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
 
+    function csrfHeaders(headers = {}) {
+        const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        if (token && header) headers[header] = token;
+        return headers;
+    }
+
     function setPaiementMessage(id, message) {
         const el = document.getElementById(id);
         if (!el) return;
@@ -298,7 +306,7 @@
         try {
             const res = await fetch('/api/v1/paiements', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: csrfHeaders({'Content-Type': 'application/json'}),
                 body: JSON.stringify(payload)
             });
             if (!res.ok) {

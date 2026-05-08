@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org" th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Fournisseurs', 'Gestion des fournisseurs', 'fournisseurs')">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="fragments/dashboard-layout :: layout(~{::content}, 'Fournisseurs', 'Gestion des fournisseurs', 'fournisseurs')">
 <div th:fragment="content">
     <style>
         .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
@@ -26,14 +26,14 @@
             <div class="page-sub" th:text="${fournisseursPage.totalElements} + ' fournisseur(s)'">0 fournisseur(s)</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-            <a href="/fournisseurs/nouveau" class="action-btn btn-edit">+ Nouveau fournisseur</a>
+            <a href="/fournisseurs/nouveau" class="action-btn btn-edit" sec:authorize="hasAnyRole('ADMIN','GERANT','USER')">+ Nouveau fournisseur</a>
         </div>
     </div>
 
     <div class="content">
         <div class="alert-success" th:if="${succes}" th:text="${succes}"></div>
 
-        <form th:action="@{/fournisseurs}" method="get" style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+        <form sec:authorize="hasAnyRole('ADMIN','GERANT','USER')" th:action="@{/fournisseurs}" method="get" style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
             <input type="text" name="q" class="form-control-dark" placeholder="Rechercher un fournisseur..." th:value="${q}" style="max-width:260px">
             <label style="font-size:12px;color:#6b7280">Taille</label>
             <select name="size" class="form-control-dark" style="width:auto">
@@ -48,21 +48,21 @@
         </form>
 
         <div class="card">
-            <div class="card-header"><div class="card-title">Répertoire fournisseurs</div></div>
+            <div class="card-header"><div class="card-title" sec:authorize="!hasRole('FOURNISSEUR')">Répertoire fournisseurs</div><div class="card-title" sec:authorize="hasRole('FOURNISSEUR')">Mon espace fournisseur</div></div>
             <div class="card-body">
                 <table>
                     <thead><tr>
                         <th><a th:href="@{/fournisseurs(page=0,size=${size},sort='nom',dir=${sort=='nom' and dir=='asc' ? 'desc':'asc'},q=${q})}">Nom</a></th>
                         <th><a th:href="@{/fournisseurs(page=0,size=${size},sort='telephone',dir=${sort=='telephone' and dir=='asc' ? 'desc':'asc'},q=${q})}">Téléphone</a></th>
                         <th><a th:href="@{/fournisseurs(page=0,size=${size},sort='email',dir=${sort=='email' and dir=='asc' ? 'desc':'asc'},q=${q})}">Email</a></th>
-                        <th></th>
+                        <th sec:authorize="hasAnyRole('ADMIN','GERANT','USER')"></th>
                     </tr></thead>
                     <tbody>
                     <tr th:each="f : ${fournisseurs}">
                         <td th:text="${f.nom}">--</td>
                         <td th:text="${f.telephone != null ? f.telephone : '—'}">—</td>
                         <td th:text="${f.email != null ? f.email : '—'}">—</td>
-                        <td>
+                        <td sec:authorize="hasAnyRole('ADMIN','GERANT','USER')">
                             <a th:href="@{/fournisseurs/modifier/{id}(id=${f.id})}" class="action-btn btn-edit">Modifier</a>
                             <form th:action="@{/fournisseurs/supprimer/{id}(id=${f.id})}" method="post" style="display:inline">
                                 <button type="submit" class="action-btn btn-delete" onclick="return confirm('Supprimer ce fournisseur ?')">Supprimer</button>

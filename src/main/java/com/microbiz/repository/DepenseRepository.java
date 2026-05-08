@@ -13,16 +13,18 @@ public interface DepenseRepository extends JpaRepository<Depense, Long> {
     List<Depense> findByTenantKeyAndDateDepenseBetweenOrderByDateDepenseDesc(String tenantKey, LocalDate debut, LocalDate fin);
     java.util.Optional<Depense> findByIdAndTenantKey(Long id, String tenantKey);
 
-    @Query("SELECT COALESCE(SUM(d.montant), 0) FROM Depense d")
-    Double calculerTotal();
+    @Query("SELECT d.devise, COALESCE(SUM(d.montant), 0) FROM Depense d WHERE d.tenantKey = :tenantKey GROUP BY d.devise")
+    List<Object[]> sumByDevise(@Param("tenantKey") String tenantKey);
 
-    @Query("SELECT COALESCE(SUM(d.montant), 0) FROM Depense d " +
-            "WHERE MONTH(d.dateDepense) = :mois AND YEAR(d.dateDepense) = :annee")
-    Double calculerDepensesDuMois(@Param("mois") int mois, @Param("annee") int annee);
+    @Query("SELECT d.devise, COALESCE(SUM(d.montant), 0) FROM Depense d " +
+            "WHERE d.tenantKey = :tenantKey AND MONTH(d.dateDepense) = :mois AND YEAR(d.dateDepense) = :annee " +
+            "GROUP BY d.devise")
+    List<Object[]> sumByDeviseForMonth(@Param("tenantKey") String tenantKey, @Param("mois") int mois, @Param("annee") int annee);
 
-    @Query("SELECT COALESCE(SUM(d.montant), 0) FROM Depense d " +
-            "WHERE d.dateDepense BETWEEN :debut AND :fin")
-    Double calculerTotalParPeriode(@Param("debut") LocalDate debut, @Param("fin") LocalDate fin);
+    @Query("SELECT d.devise, COALESCE(SUM(d.montant), 0) FROM Depense d " +
+            "WHERE d.tenantKey = :tenantKey AND d.dateDepense BETWEEN :debut AND :fin " +
+            "GROUP BY d.devise")
+    List<Object[]> sumByDeviseForPeriod(@Param("tenantKey") String tenantKey, @Param("debut") LocalDate debut, @Param("fin") LocalDate fin);
 
     @Query("SELECT d.categorie, SUM(d.montant) FROM Depense d " +
             "WHERE d.tenantKey = :tenantKey " +
