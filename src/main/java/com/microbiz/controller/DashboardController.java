@@ -1,7 +1,9 @@
 package com.microbiz.controller;
 
 import com.microbiz.service.*;
+import com.microbiz.security.PmeAccess;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,17 +22,22 @@ public class DashboardController {
     @Autowired private DepenseService     depenseService;
     @Autowired private CurrencyRateService currencyRateService;
     @Autowired private PredictiveSalesService predictiveSalesService;
+    @Autowired private PmeAccess pmeAccess;
 
     @GetMapping({"/", "/dashboard"})
     public String dashboard(
             @RequestParam(defaultValue = "mois") String periode,
-            Model model) {
+            Model model,
+            Authentication authentication) {
+
+        boolean accesFinance = pmeAccess.canAccessFinance(authentication);
 
         // Métriques financières
         model.addAttribute("ca",       statistiqueService.getChiffreAffairesTotal());
-        model.addAttribute("depenses", depenseService.getTotalDepenses());
-        model.addAttribute("benefice", statistiqueService.getBeneficeNet());
-        model.addAttribute("marge",    statistiqueService.getMargeBeneficiaire());
+        model.addAttribute("accesFinance", accesFinance);
+        model.addAttribute("depenses", accesFinance ? depenseService.getTotalDepenses() : 0.0);
+        model.addAttribute("benefice", accesFinance ? statistiqueService.getBeneficeNet() : 0.0);
+        model.addAttribute("marge",    accesFinance ? statistiqueService.getMargeBeneficiaire() : 0.0);
         model.addAttribute("caJour",   venteService.getCADuJour());
         model.addAttribute("nbTransactions", venteService.getNbTransactionsDuJour());
         model.addAttribute("devisePrincipale", currencyRateService.getBaseCurrency());
@@ -46,7 +53,7 @@ public class DashboardController {
         model.addAttribute("periode", periode);
 
         // Données complémentaires
-        model.addAttribute("depensesCategories", depenseService.getDepensesParCategorie());
+        model.addAttribute("depensesCategories", accesFinance ? depenseService.getDepensesParCategorie() : Map.of());
         model.addAttribute("topProduits",        venteService.getTopProduits(5));
         model.addAttribute("ventesRecentes",     venteService.getVentesRecentes());
         model.addAttribute("stockBas",           produitService.getProduitsStockBas());
@@ -57,12 +64,15 @@ public class DashboardController {
 
     @GetMapping("/api/kpis")
     @ResponseBody
-    public Map<String, Object> kpis() {
+    public Map<String, Object> kpis(Authentication authentication) {
+        boolean accesFinance = pmeAccess.canAccessFinance(authentication);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("ca", statistiqueService.getChiffreAffairesTotal());
-        result.put("depenses", depenseService.getTotalDepenses());
-        result.put("benefice", statistiqueService.getBeneficeNet());
-        result.put("marge", statistiqueService.getMargeBeneficiaire());
+        if (accesFinance) {
+            result.put("depenses", depenseService.getTotalDepenses());
+            result.put("benefice", statistiqueService.getBeneficeNet());
+            result.put("marge", statistiqueService.getMargeBeneficiaire());
+        }
         result.put("caJour", venteService.getCADuJour());
         result.put("nbTransactions", venteService.getNbTransactionsDuJour());
         result.put("timestamp", System.currentTimeMillis());
