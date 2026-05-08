@@ -30,18 +30,13 @@ public class StatistiqueService {
     public Double getChiffreAffairesDuMois() {
         int month = LocalDate.now().getMonthValue();
         int year = LocalDate.now().getYear();
-        return venteService.getVentesParPeriode(
-                        LocalDate.of(year, month, 1),
-                        LocalDate.of(year, month, 1).withDayOfMonth(LocalDate.of(year, month, 1).lengthOfMonth())
-                ).stream()
-                .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
-                .sum();
+        LocalDate debut = LocalDate.of(year, month, 1);
+        LocalDate fin = debut.withDayOfMonth(debut.lengthOfMonth());
+        return sumMonthlyRowsToBase(venteRepository.sumByMonthAndDevise(TenantContext.getTenant(), debut, fin));
     }
 
     public Double getChiffreAffairesParPeriode(LocalDate debut, LocalDate fin) {
-        return venteService.getVentesParPeriode(debut, fin).stream()
-                .mapToDouble(v -> currencyRateService.toBase(v.getMontantTotal(), v.getDevise()))
-                .sum();
+        return sumMonthlyRowsToBase(venteRepository.sumByMonthAndDevise(TenantContext.getTenant(), debut, fin));
     }
 
     public Double getBeneficeNet() {
@@ -97,12 +92,13 @@ public class StatistiqueService {
     /** Évolution SEMESTRIELLE (S1/S2) à partir des données mensuelles */
     public Map<String, Double> getEvolutionSemestrielle() {
         Map<String, Double> result = new LinkedHashMap<>();
-        for (var vente : venteService.findAll()) {
-            if (vente.getDateVente() == null) continue;
-            int mois = vente.getDateVente().getMonthValue();
-            int annee = vente.getDateVente().getYear();
-            double ca = currencyRateService.toBase(vente.getMontantTotal(), vente.getDevise());
+        for (Object[] row : venteRepository.sumByMonthAndDevise(TenantContext.getTenant(), null, null)) {
+            int annee = ((Number) row[0]).intValue();
+            int mois = ((Number) row[1]).intValue();
+            String devise = (String) row[2];
+            double montant = ((Number) row[3]).doubleValue();
             String semestre = mois <= 6 ? "S1 " + annee : "S2 " + annee;
+            double ca = currencyRateService.toBase(montant, devise);
             result.put(semestre, result.getOrDefault(semestre, 0.0) + ca);
         }
         return result;
@@ -131,5 +127,11 @@ public class StatistiqueService {
     public double calculerVariationPourcentage(double courant, double precedent) {
         if (precedent == 0) return courant == 0 ? 0 : 100;
         return ((courant - precedent) / precedent) * 100.0;
+    }
+
+    private double sumMonthlyRowsToBase(List<Object[]> rows) {
+        return rows.stream()
+                .mapToDouble(row -> currencyRateService.toBase(((Number) row[3]).doubleValue(), (String) row[2]))
+                .sum();
     }
 }

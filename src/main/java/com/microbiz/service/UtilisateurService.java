@@ -2,6 +2,7 @@ package com.microbiz.service;
 
 import com.microbiz.model.Utilisateur;
 import com.microbiz.repository.UtilisateurRepository;
+import com.microbiz.model.PmeRole;
 import com.microbiz.security.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,8 +26,9 @@ public class UtilisateurService {
         String tenant = TenantContext.getTenant();
         List<Utilisateur> utilisateurs;
 
-        if (role != null && !role.isBlank()) {
-            utilisateurs = utilisateurRepository.findByTenantKeyAndRole(tenant, role);
+        String normalizedRole = normalizeFilterRole(role);
+        if (!normalizedRole.isBlank()) {
+            utilisateurs = utilisateurRepository.findByTenantKeyAndRole(tenant, normalizedRole);
         } else {
             utilisateurs = utilisateurRepository.findByTenantKey(tenant);
         }
@@ -45,14 +47,15 @@ public class UtilisateurService {
     public Page<Utilisateur> rechercherPage(String q, String role, Pageable pageable) {
         String tenant = TenantContext.getTenant();
         String query = q == null ? "" : q.trim();
-        boolean hasRole = role != null && !role.isBlank();
+        String normalizedRole = normalizeFilterRole(role);
+        boolean hasRole = !normalizedRole.isBlank();
         boolean hasQuery = !query.isBlank();
 
         if (!hasRole && !hasQuery) {
             return utilisateurRepository.findByTenantKey(tenant, pageable);
         }
         if (hasRole && !hasQuery) {
-            return utilisateurRepository.findByTenantKeyAndRole(tenant, role, pageable);
+            return utilisateurRepository.findByTenantKeyAndRole(tenant, normalizedRole, pageable);
         }
         if (!hasRole) {
             // approximation OR (nom/email) via fusion nom + email page pour éviter requête custom lourde
@@ -60,9 +63,9 @@ public class UtilisateurService {
             if (byNom.hasContent()) return byNom;
             return utilisateurRepository.findByTenantKeyAndEmailContainingIgnoreCase(tenant, query, pageable);
         }
-        Page<Utilisateur> byNom = utilisateurRepository.findByTenantKeyAndRoleAndNomContainingIgnoreCase(tenant, role, query, pageable);
+        Page<Utilisateur> byNom = utilisateurRepository.findByTenantKeyAndRoleAndNomContainingIgnoreCase(tenant, normalizedRole, query, pageable);
         if (byNom.hasContent()) return byNom;
-        return utilisateurRepository.findByTenantKeyAndRoleAndEmailContainingIgnoreCase(tenant, role, query, pageable);
+        return utilisateurRepository.findByTenantKeyAndRoleAndEmailContainingIgnoreCase(tenant, normalizedRole, query, pageable);
     }
 
     public boolean emailExiste(String email) {
@@ -81,8 +84,15 @@ public class UtilisateurService {
     }
 
     private String resolveRole(String role) {
-        if ("ROLE_ADMIN".equals(role)) return "ROLE_ADMIN";
-        if ("ROLE_COMMERCIAL".equals(role)) return "ROLE_COMMERCIAL";
-        return "ROLE_USER";
+        return PmeRole.normalizeKnownAuthority(role);
+    }
+
+    private String normalizeFilterRole(String role) {
+        if (role == null || role.isBlank()) {
+            return "";
+        }
+        return PmeRole.fromAuthority(role)
+                .map(PmeRole::getAuthority)
+                .orElse("");
     }
 }

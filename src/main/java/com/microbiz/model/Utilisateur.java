@@ -20,7 +20,7 @@ public class Utilisateur {
     @NotBlank
     @Column(name = "mot_de_passe", nullable = false)
     private String motDePasse;
-    // ROLE_ADMIN  ou  ROLE_USER
+    // ROLE_ADMIN, ROLE_GERANT, ROLE_USER, ROLE_COMPTABLE ou ROLE_COMMERCIAL
     @NotBlank
     private String role;
 
@@ -34,9 +34,20 @@ public class Utilisateur {
         }
     }
     public boolean isAdmin() {
-        return "ROLE_ADMIN".equals(role);
+        return PmeRole.ADMIN.matches(role);
+    }
+    public boolean isGerant() {
+        return PmeRole.GERANT.matches(role);
+    }
+    public boolean isComptable() {
+        return PmeRole.COMPTABLE.matches(role);
     }
     public boolean isCommercial() {
-        return "ROLE_COMMERCIAL".equals(role);
+        return PmeRole.COMMERCIAL.matches(role);
+    }
+    public String getRoleLabel() {
+        return PmeRole.fromAuthority(role)
+                .map(PmeRole::getLabel)
+                .orElse(PmeRole.USER.getLabel());
     }
 }

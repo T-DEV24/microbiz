@@ -17,6 +17,13 @@
     tx.objectStore(STORE).add({ payload, createdAt: Date.now() });
   }
 
+  function csrfHeaders(headers = {}) {
+    const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+    if (token && header) headers[header] = token;
+    return headers;
+  }
+
   async function flushSales() {
     if (!navigator.onLine) return;
     const db = await openDb();
@@ -27,7 +34,7 @@
       for (const item of allReq.result) {
         const body = new URLSearchParams(item.payload);
         try {
-          const res = await fetch('/ventes/enregistrer', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+          const res = await fetch('/ventes/enregistrer', { method: 'POST', headers: csrfHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }), body });
           if (res.ok) store.delete(item.id);
         } catch (e) {
           return;
