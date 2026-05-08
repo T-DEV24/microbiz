@@ -42,6 +42,12 @@ public class Utilisateur {
     public boolean isComptable() {
         return PmeRole.COMPTABLE.matches(role);
     }
+    public boolean isGerant() {
+        return "ROLE_GERANT".equals(role);
+    }
+    public boolean isComptable() {
+        return "ROLE_COMPTABLE".equals(role);
+    }
     public boolean isCommercial() {
         return PmeRole.COMMERCIAL.matches(role);
     }
