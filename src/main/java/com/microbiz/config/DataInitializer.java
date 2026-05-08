@@ -18,14 +18,19 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${microbiz.seed.demo-data:false}") private boolean seedDemoData;
     @Value("${microbiz.seed.admin-password:}") private String adminPassword;
     @Value("${microbiz.seed.user-password:}") private String userPassword;
+    @Value("${spring.datasource.url:}") private String datasourceUrl;
     @Override
     public void run(String... args) {
-        if (!seedDemoData) {
+        boolean embeddedLocalDatabase = isEmbeddedLocalDatabase();
+        boolean shouldSeedDemoData = seedDemoData || embeddedLocalDatabase;
+        if (!shouldSeedDemoData) {
             return;
         }
 
-        if (adminPassword == null || adminPassword.isBlank()
-                || userPassword == null || userPassword.isBlank()) {
+        String effectiveAdminPassword = normalizeSeedPassword(adminPassword, embeddedLocalDatabase ? "admin123" : "");
+        String effectiveUserPassword = normalizeSeedPassword(userPassword, embeddedLocalDatabase ? "user123" : "");
+
+        if (effectiveAdminPassword.isBlank() || effectiveUserPassword.isBlank()) {
             System.out.println("[Microbiz] Initialisation de démo ignorée : définissez MICROBIZ_ADMIN_PASSWORD et MICROBIZ_USER_PASSWORD.");
             return;
         }
@@ -127,4 +132,25 @@ public class DataInitializer implements CommandLineRunner {
                     .telephone("+237 690 345 678").tenantKey("default").build());
         }
     }
+    private boolean isEmbeddedLocalDatabase() {
+        return datasourceUrl != null && datasourceUrl.startsWith("jdbc:h2:");
+    }
+
+    private String normalizeSeedPassword(String configuredPassword, String fallbackPassword) {
+        if (configuredPassword != null && !configuredPassword.isBlank()) {
+            return configuredPassword;
+        }
+        return fallbackPassword == null ? "" : fallbackPassword;
+    }
+
+    private String maskPasswordSource(String configuredPassword, boolean embeddedLocalDatabase, String fallbackPassword) {
+        if (configuredPassword != null && !configuredPassword.isBlank()) {
+            return "[mot de passe via variable d'environnement]";
+        }
+        if (embeddedLocalDatabase) {
+            return fallbackPassword + " [démo locale H2]";
+        }
+        return "[non configuré]";
+    }
+
 }
