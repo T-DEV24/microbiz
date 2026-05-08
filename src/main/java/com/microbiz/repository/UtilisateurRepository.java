@@ -23,4 +23,5 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     Page<Utilisateur> findByTenantKeyAndEmailContainingIgnoreCase(String tenantKey, String email, Pageable pageable);
     Page<Utilisateur> findByTenantKeyAndRoleAndNomContainingIgnoreCase(String tenantKey, String role, String nom, Pageable pageable);
     Page<Utilisateur> findByTenantKeyAndRoleAndEmailContainingIgnoreCase(String tenantKey, String role, String email, Pageable pageable);
+    long countByTenantKeyAndRoleAndEnabledTrue(String tenantKey, String role);
 }

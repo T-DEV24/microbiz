@@ -177,18 +177,18 @@
   <nav class="flex-grow-1 py-2">
     <div class="nav-section">Principal</div>
     <a href="/dashboard" class="nav-link" th:classappend="${active} == 'dashboard' ? ' active' : ''"><i class="bi bi-grid-fill"></i> Dashboard</a>
-    <a href="/ventes" class="nav-link" th:classappend="${active} == 'ventes' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER','COMMERCIAL')"><i class="bi bi-bag-check"></i> Ventes</a>
-    <a href="/produits" class="nav-link" th:classappend="${active} == 'produits' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER','COMMERCIAL')"><i class="bi bi-box-seam"></i> Produits</a>
-    <a href="/clients" class="nav-link" th:classappend="${active} == 'clients' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER','COMMERCIAL')"><i class="bi bi-people"></i> Clients</a>
-    <a href="/fournisseurs" class="nav-link" th:classappend="${active} == 'fournisseurs' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-truck"></i> Fournisseurs</a>
-    <a href="/mouvements-stock" class="nav-link" th:classappend="${active} == 'mouvements-stock' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-arrow-left-right"></i> Mouvements stock</a>
-    <a href="/entreprise" class="nav-link" th:classappend="${active} == 'entreprise' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-building"></i> Entreprise</a>
-    <a href="/devises" class="nav-link" th:classappend="${active} == 'devises' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-currency-exchange"></i> Devises</a>
+    <a href="/ventes" class="nav-link" th:classappend="${active} == 'ventes' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMMERCIAL')"><i class="bi bi-bag-check"></i> Ventes</a>
+    <a href="/produits" class="nav-link" th:classappend="${active} == 'produits' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMMERCIAL')"><i class="bi bi-box-seam"></i> Produits</a>
+    <a href="/clients" class="nav-link" th:classappend="${active} == 'clients' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMMERCIAL')"><i class="bi bi-people"></i> Clients</a>
+    <a href="/fournisseurs" class="nav-link" th:classappend="${active} == 'fournisseurs' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','FOURNISSEUR')"><i class="bi bi-truck"></i> Fournisseurs</a>
+    <a href="/mouvements-stock" class="nav-link" th:classappend="${active} == 'mouvements-stock' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER')"><i class="bi bi-arrow-left-right"></i> Mouvements stock</a>
+    <a href="/entreprise" class="nav-link" th:classappend="${active} == 'entreprise' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER')"><i class="bi bi-building"></i> Entreprise</a>
+    <a href="/devises" class="nav-link" th:classappend="${active} == 'devises' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE')"><i class="bi bi-currency-exchange"></i> Devises</a>
     <div class="nav-section">Finance</div>
-    <a href="/depenses" class="nav-link" th:classappend="${active} == 'depenses' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-credit-card"></i> Dépenses</a>
-    <a href="/factures" class="nav-link" th:classappend="${active} == 'factures' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-receipt"></i> Factures</a>
-    <a href="/statistiques" class="nav-link" th:classappend="${active} == 'statistiques' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER','COMMERCIAL')"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
-    <a href="/comptabilite/ohada" class="nav-link" th:classappend="${active} == 'ohada' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','USER')"><i class="bi bi-journal-text"></i> Compta OHADA</a>
+    <a href="/depenses" class="nav-link" th:classappend="${active} == 'depenses' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE')"><i class="bi bi-credit-card"></i> Dépenses</a>
+    <a href="/factures" class="nav-link" th:classappend="${active} == 'factures' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE','COMMERCIAL')"><i class="bi bi-receipt"></i> Factures</a>
+    <a href="/statistiques" class="nav-link" th:classappend="${active} == 'statistiques' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE','COMMERCIAL')"><i class="bi bi-bar-chart-line"></i> Statistiques</a>
+    <a href="/comptabilite/ohada" class="nav-link" th:classappend="${active} == 'ohada' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE')"><i class="bi bi-journal-text"></i> Compta OHADA</a>
     <div class="nav-section" sec:authorize="hasRole('ADMIN')">Système</div>
     <a href="/utilisateurs" class="nav-link" th:classappend="${active} == 'utilisateurs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-shield-lock"></i> Utilisateurs</a>
     <a href="/audit-logs" class="nav-link" th:classappend="${active} == 'audit-logs' ? ' active' : ''" sec:authorize="hasRole('ADMIN')"><i class="bi bi-journal-check"></i> Audit logs</a>
@@ -245,7 +245,7 @@
           <i class="bi bi-calendar3 me-1"></i>Semestriel
         </button>
       </form>
-      <a href="/ventes" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
+      <a href="/ventes" class="btn btn-primary btn-sm d-flex align-items-center gap-1" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMMERCIAL')">
         <i class="bi bi-plus-lg"></i> Nouvelle vente
       </a>
     </div>
@@ -298,7 +298,7 @@
           </div>
         </div>
       </div>
-      <div class="col-sm-6 col-xl-3">
+      <div class="col-sm-6 col-xl-3" th:if="${accesFinance}">
         <div class="metric-card">
           <div class="d-flex justify-content-between align-items-start">
             <div>
@@ -317,7 +317,7 @@
           </div>
         </div>
       </div>
-      <div class="col-sm-6 col-xl-3">
+      <div class="col-sm-6 col-xl-3" th:if="${accesFinance}">
         <div class="metric-card">
           <div class="d-flex justify-content-between align-items-start">
             <div>
@@ -382,7 +382,7 @@
       </div>
 
       <!-- Dépenses par catégorie -->
-      <div class="col-lg-5">
+      <div class="col-lg-5" th:if="${accesFinance}">
         <div class="chart-card h-100">
           <div class="card-header">
             <i class="bi bi-pie-chart me-2 text-warning"></i>Dépenses par catégorie
@@ -526,24 +526,27 @@
     }
   });
 
-  // Graphique dépenses
-  new Chart(document.getElementById('chartDep'), {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(depensesCateg),
-      datasets: [{
-        data: Object.values(depensesCateg),
-        backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, boxWidth: 10 } }
+  // Graphique dépenses (réservé aux rôles finance PME)
+  const chartDepEl = document.getElementById('chartDep');
+  if (chartDepEl) {
+    new Chart(chartDepEl, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(depensesCateg),
+        datasets: [{
+          data: Object.values(depensesCateg),
+          backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, boxWidth: 10 } }
+        }
       }
-    }
-  });
+    });
+  }
 
   // Auto-dismiss toast
   setTimeout(() => {
