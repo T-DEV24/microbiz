@@ -7,6 +7,8 @@ import java.util.Collection;
 
 public class AuthenticatedUser extends User {
 
+    private static final long serialVersionUID = 4663227312801928362L;
+
     private final String tenantKey;
 
     public AuthenticatedUser(String username,
