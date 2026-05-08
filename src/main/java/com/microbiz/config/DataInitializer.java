@@ -46,6 +46,22 @@ public class DataInitializer implements CommandLineRunner {
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(user);
+            Utilisateur gerant = Utilisateur.builder()
+                    .nom("Co-gérant")
+                    .email("gerant@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(userPassword))
+                    .role("ROLE_GERANT")
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(gerant);
+            Utilisateur comptable = Utilisateur.builder()
+                    .nom("Comptable externe")
+                    .email("comptable@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(userPassword))
+                    .role("ROLE_COMPTABLE")
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(comptable);
             Utilisateur commercial = Utilisateur.builder()
                     .nom("Awa Commercial")
                     .email("commercial@microbiz.com")
@@ -56,6 +72,8 @@ public class DataInitializer implements CommandLineRunner {
             utilisateurRepo.save(commercial);
             System.out.println("  ADMIN -> admin@microbiz.com / [mot de passe via variable d'environnement]");
             System.out.println("  USER  -> jean@microbiz.com  / [mot de passe via variable d'environnement]");
+            System.out.println("  GER   -> gerant@microbiz.com / [mot de passe via variable d'environnement]");
+            System.out.println("  CPT   -> comptable@microbiz.com / [mot de passe via variable d'environnement]");
             System.out.println("  COM   -> commercial@microbiz.com / [mot de passe via variable d'environnement]");
         }
         // Produits de demo
