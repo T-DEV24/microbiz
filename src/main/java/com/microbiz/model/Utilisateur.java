@@ -34,7 +34,13 @@ public class Utilisateur {
         }
     }
     public boolean isAdmin() {
-        return "ROLE_ADMIN".equals(role);
+        return PmeRole.ADMIN.matches(role);
+    }
+    public boolean isGerant() {
+        return PmeRole.GERANT.matches(role);
+    }
+    public boolean isComptable() {
+        return PmeRole.COMPTABLE.matches(role);
     }
     public boolean isGerant() {
         return "ROLE_GERANT".equals(role);
@@ -43,6 +49,11 @@ public class Utilisateur {
         return "ROLE_COMPTABLE".equals(role);
     }
     public boolean isCommercial() {
-        return "ROLE_COMMERCIAL".equals(role);
+        return PmeRole.COMMERCIAL.matches(role);
+    }
+    public String getRoleLabel() {
+        return PmeRole.fromAuthority(role)
+                .map(PmeRole::getLabel)
+                .orElse(PmeRole.USER.getLabel());
     }
 }

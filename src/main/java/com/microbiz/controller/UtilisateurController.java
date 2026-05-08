@@ -1,6 +1,7 @@
 package com.microbiz.controller;
 
 import com.microbiz.model.Utilisateur;
+import com.microbiz.model.PmeRole;
 import com.microbiz.service.UtilisateurService;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +44,9 @@ public class UtilisateurController {
 
         model.addAttribute("utilisateurs", utilisateursPage.getContent());
         model.addAttribute("utilisateursPage", utilisateursPage);
+        model.addAttribute("rolesPme", PmeRole.assignableRoles());
         model.addAttribute("q", q == null ? "" : q);
-        model.addAttribute("role", role == null ? "" : role);
+        model.addAttribute("role", PmeRole.fromAuthority(role).map(PmeRole::getAuthority).orElse(""));
         model.addAttribute("size", pageable.getPageSize());
         model.addAttribute("sort", sortField);
         model.addAttribute("dir", direction.name().toLowerCase());

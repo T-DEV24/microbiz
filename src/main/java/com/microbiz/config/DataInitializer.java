@@ -1,6 +1,7 @@
 package com.microbiz.config;
 import com.microbiz.model.*;
 import com.microbiz.repository.*;
+import com.microbiz.model.PmeRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -34,7 +35,7 @@ public class DataInitializer implements CommandLineRunner {
                     .nom("Administrateur")
                     .email("admin@microbiz.com")
                     .motDePasse(passwordEncoder.encode(adminPassword))  // hache !
-                    .role("ROLE_ADMIN")
+                    .role(PmeRole.ADMIN.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(admin);
@@ -42,7 +43,7 @@ public class DataInitializer implements CommandLineRunner {
                     .nom("Jean Dupont")
                     .email("jean@microbiz.com")
                     .motDePasse(passwordEncoder.encode(userPassword))
-                    .role("ROLE_USER")
+                    .role(PmeRole.USER.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(user);
@@ -50,7 +51,7 @@ public class DataInitializer implements CommandLineRunner {
                     .nom("Co-gérant")
                     .email("gerant@microbiz.com")
                     .motDePasse(passwordEncoder.encode(userPassword))
-                    .role("ROLE_GERANT")
+                    .role(PmeRole.GERANT.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(gerant);
@@ -58,7 +59,7 @@ public class DataInitializer implements CommandLineRunner {
                     .nom("Comptable externe")
                     .email("comptable@microbiz.com")
                     .motDePasse(passwordEncoder.encode(userPassword))
-                    .role("ROLE_COMPTABLE")
+                    .role(PmeRole.COMPTABLE.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(comptable);
@@ -66,7 +67,7 @@ public class DataInitializer implements CommandLineRunner {
                     .nom("Awa Commercial")
                     .email("commercial@microbiz.com")
                     .motDePasse(passwordEncoder.encode(userPassword))
-                    .role("ROLE_COMMERCIAL")
+                    .role(PmeRole.COMMERCIAL.getAuthority())
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(commercial);

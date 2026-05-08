@@ -65,37 +65,52 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
                         // Administration système : réservée au propriétaire du tenant.
-                        .requestMatchers("/utilisateurs/**", "/audit-logs/**", "/saas/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/utilisateurs/**", "/audit-logs/**", "/saas/admin/**").hasAnyRole(PmeAccess.SYSTEM_ADMIN)
                         // ACC-03 : les commerciaux peuvent consulter les factures/PDF liées au tenant,
                         // sans obtenir les droits d'écriture finance (statut, encaissement, création).
                         .requestMatchers(HttpMethod.GET, "/factures", "/factures/**", "/api/v1/factures", "/api/v1/factures/**")
-                        .hasAnyRole("ADMIN", "GERANT", "USER", "COMPTABLE", "COMMERCIAL")
+                        .hasAnyRole(PmeAccess.INVOICE_READ)
                         // Finance/comptabilité : disponible au gérant, à l'utilisateur métier et au comptable externe.
                         .requestMatchers(
+                                "/depenses",
                                 "/depenses/**",
+                                "/factures",
                                 "/factures/**",
+                                "/comptabilite/ohada",
                                 "/comptabilite/ohada/**",
+                                "/devises",
                                 "/devises/**",
+                                "/api/v1/factures",
                                 "/api/v1/factures/**",
+                                "/api/v1/paiements",
                                 "/api/v1/paiements/**"
-                        ).hasAnyRole("ADMIN", "GERANT", "USER", "COMPTABLE")
+                        ).hasAnyRole(PmeAccess.FINANCE_WRITE)
                         // Opérations métier hors administration système.
                         .requestMatchers(
+                                "/fournisseurs",
                                 "/fournisseurs/**",
+                                "/mouvements-stock",
                                 "/mouvements-stock/**",
+                                "/entreprise",
                                 "/entreprise/**",
+                                "/api/v1/fournisseurs",
                                 "/api/v1/fournisseurs/**",
+                                "/api/v1/stock-alertes",
                                 "/api/v1/stock-alertes/**",
+                                "/api/v1/achats",
                                 "/api/v1/achats/**"
-                        ).hasAnyRole("ADMIN", "GERANT", "USER")
+                        ).hasAnyRole(PmeAccess.OPERATIONS)
                         // Vente terrain : le commercial conserve ventes/clients/produits, mais pas dépenses/utilisateurs.
-                        .requestMatchers("/ventes/**", "/clients/**", "/produits/**")
-                        .hasAnyRole("ADMIN", "GERANT", "USER", "COMMERCIAL")
-                        .requestMatchers("/api/kpis").hasAnyRole("ADMIN", "GERANT", "USER", "COMPTABLE", "COMMERCIAL")
+                        .requestMatchers("/ventes", "/ventes/**", "/clients", "/clients/**", "/produits", "/produits/**")
+                        .hasAnyRole(PmeAccess.SALES)
+                        .requestMatchers("/api/kpis").hasAnyRole(PmeAccess.KPI_READ)
+                        // Les exports incluent dépenses/bénéfices : réservés aux rôles finance PME.
+                        .requestMatchers(HttpMethod.GET, "/statistiques/export.csv", "/statistiques/export-pdf")
+                        .hasAnyRole(PmeAccess.FINANCE_WRITE)
                         // Statistiques en lecture : gérant, comptable et commercial peuvent superviser sans administrer.
                         .requestMatchers(HttpMethod.GET, "/statistiques/**")
-                        .hasAnyRole("ADMIN", "GERANT", "USER", "COMPTABLE", "COMMERCIAL")
-                        .requestMatchers(HttpMethod.POST, "/statistiques/**").hasAnyRole("ADMIN", "GERANT", "USER")
+                        .hasAnyRole(PmeAccess.KPI_READ)
+                        .requestMatchers(HttpMethod.POST, "/statistiques/**").hasAnyRole(PmeAccess.STATS_WRITE)
                         // Dashboard connecté
                         .requestMatchers("/", "/dashboard").authenticated()
                         // Tout le reste : connexion obligatoire

@@ -47,11 +47,7 @@
             <input type="text" name="q" class="form-control-dark" placeholder="Rechercher nom/email..." th:value="${q}" style="max-width:260px;margin-bottom:0">
             <select name="role" class="form-control-dark" style="max-width:220px;margin-bottom:0">
                 <option value="">Tous les rôles</option>
-                <option value="ROLE_ADMIN" th:selected="${role == 'ROLE_ADMIN'}">Administrateur</option>
-                <option value="ROLE_GERANT" th:selected="${role == 'ROLE_GERANT'}">Gérant</option>
-                <option value="ROLE_USER" th:selected="${role == 'ROLE_USER'}">Utilisateur</option>
-                <option value="ROLE_COMPTABLE" th:selected="${role == 'ROLE_COMPTABLE'}">Comptable</option>
-                <option value="ROLE_COMMERCIAL" th:selected="${role == 'ROLE_COMMERCIAL'}">Commercial</option>
+                <option th:each="r : ${rolesPme}" th:value="${r.authority}" th:selected="${role == r.authority}" th:text="${r.label}">Rôle</option>
             </select>
             <button type="submit" class="action-btn btn-edit">Filtrer</button>
             <a href="/utilisateurs" class="action-btn">Reset</a>
@@ -71,11 +67,7 @@
                         <input type="password" class="form-control-dark" name="motDePasse" placeholder="Minimum 6 caractères" required>
                         <label class="form-label-dark">Rôle *</label>
                         <select class="form-control-dark" name="role" required>
-                            <option value="ROLE_USER">Utilisateur simple</option>
-                            <option value="ROLE_GERANT">Gérant / co-gérant</option>
-                            <option value="ROLE_COMPTABLE">Comptable externe</option>
-                            <option value="ROLE_COMMERCIAL">Commercial</option>
-                            <option value="ROLE_ADMIN">Administrateur</option>
+                            <option th:each="r : ${rolesPme}" th:value="${r.authority}" th:text="${r.label}" th:title="${r.description}">Rôle</option>
                         </select>
                         <button type="submit" class="btn-submit">Créer l'utilisateur</button>
                     </form>
@@ -102,8 +94,7 @@
                                      th:text="${#strings.substring(u.nom,0,1).toUpperCase()}">A</div>
                                 <div>
                                     <div style="font-weight:500" th:text="${u.nom}">--</div>
-                                    <div style="font-size:11px;color:var(--muted)"
-                                         th:text="${u.isAdmin()} ? 'Administrateur' : (${u.isGerant()} ? 'Gérant' : (${u.isComptable()} ? 'Comptable' : (${u.isCommercial()} ? 'Commercial' : 'Utilisateur')))">--</div>
+                                    <div style="font-size:11px;color:var(--muted)" th:text="${u.roleLabel}">--</div>
                                 </div>
                             </div>
                         </td>
