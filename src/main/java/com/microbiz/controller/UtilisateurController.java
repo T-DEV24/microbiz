@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -65,6 +66,56 @@ public class UtilisateurController {
         }
         utilisateurService.creer(nom, email, motDePasse, role);
         ra.addFlashAttribute("succes", "Utilisateur ajouté avec succès.");
+        return "redirect:/utilisateurs";
+    }
+
+    @PostMapping("/{id}/modifier")
+    public String modifier(@PathVariable Long id,
+                           @RequestParam @NotBlank String nom,
+                           @RequestParam @NotBlank String email,
+                           @RequestParam(defaultValue = "ROLE_USER") String role,
+                           @RequestParam(required = false) String motDePasse,
+                           @RequestParam(required = false, defaultValue = "false") boolean enabled,
+                           RedirectAttributes ra) {
+        try {
+            utilisateurService.modifier(id, nom, email, role, motDePasse, enabled);
+            ra.addFlashAttribute("succes", "Compte mis à jour.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("erreur", ex.getMessage());
+        }
+        return "redirect:/utilisateurs";
+    }
+
+    @PostMapping("/{id}/bloquer")
+    public String bloquer(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            utilisateurService.setEnabled(id, false);
+            ra.addFlashAttribute("succes", "Compte bloqué.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("erreur", ex.getMessage());
+        }
+        return "redirect:/utilisateurs";
+    }
+
+    @PostMapping("/{id}/debloquer")
+    public String debloquer(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            utilisateurService.setEnabled(id, true);
+            ra.addFlashAttribute("succes", "Compte débloqué.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("erreur", ex.getMessage());
+        }
+        return "redirect:/utilisateurs";
+    }
+
+    @PostMapping("/{id}/supprimer")
+    public String supprimer(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            utilisateurService.supprimer(id);
+            ra.addFlashAttribute("succes", "Compte supprimé.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("erreur", ex.getMessage());
+        }
         return "redirect:/utilisateurs";
     }
 

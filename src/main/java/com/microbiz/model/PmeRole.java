@@ -9,7 +9,8 @@ public enum PmeRole {
     GERANT("ROLE_GERANT", "GERANT", "Gérant / co-gérant", "Supervision opérationnelle et financière sans administration système."),
     USER("ROLE_USER", "USER", "Utilisateur polyvalent", "Employé de confiance : ventes, stock, fournisseurs, factures et dépenses courantes."),
     COMPTABLE("ROLE_COMPTABLE", "COMPTABLE", "Comptable externe", "Accès finance/comptabilité : factures, dépenses, devises, rapports et OHADA, sans ventes directes."),
-    COMMERCIAL("ROLE_COMMERCIAL", "COMMERCIAL", "Commercial", "Ventes terrain : ventes, clients, produits et consultation des factures/PDF, sans dépenses ni administration.");
+    COMMERCIAL("ROLE_COMMERCIAL", "COMMERCIAL", "Commercial", "Ventes terrain : ventes, clients, produits et consultation des factures/PDF, sans dépenses ni administration."),
+    FOURNISSEUR("ROLE_FOURNISSEUR", "FOURNISSEUR", "Fournisseur", "Portail fournisseur : consultation limitée à sa fiche fournisseur et à ses informations de contact.");
 
     private final String authority;
     private final String securityName;
@@ -46,7 +47,7 @@ public enum PmeRole {
     }
 
     public static List<PmeRole> assignableRoles() {
-        return List.of(USER, GERANT, COMPTABLE, COMMERCIAL, ADMIN);
+        return List.of(USER, GERANT, COMPTABLE, COMMERCIAL, FOURNISSEUR, ADMIN);
     }
 
     public static Optional<PmeRole> fromAuthority(String role) {

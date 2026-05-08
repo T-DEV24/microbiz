@@ -59,13 +59,12 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/service-worker.js",
                                 "/manifest.webmanifest",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
                                 "/favicon.ico",
                                 "/error"
                         ).permitAll()
                         // Administration système : réservée au propriétaire du tenant.
-                        .requestMatchers("/utilisateurs/**", "/audit-logs/**", "/saas/admin/**").hasAnyRole(PmeAccess.SYSTEM_ADMIN)
+                        .requestMatchers("/utilisateurs/**", "/audit-logs/**", "/saas/admin/**", "/docs", "/docs/**", "/swagger-ui/**", "/v3/api-docs/**")
+                        .hasAnyRole(PmeAccess.SYSTEM_ADMIN)
                         // ACC-03 : les commerciaux peuvent consulter les factures/PDF liées au tenant,
                         // sans obtenir les droits d'écriture finance (statut, encaissement, création).
                         .requestMatchers(HttpMethod.GET, "/factures", "/factures/**", "/api/v1/factures", "/api/v1/factures/**")
@@ -85,6 +84,9 @@ public class SecurityConfig {
                                 "/api/v1/paiements",
                                 "/api/v1/paiements/**"
                         ).hasAnyRole(PmeAccess.FINANCE_WRITE)
+                        // Portail fournisseur : lecture de sa propre fiche uniquement.
+                        .requestMatchers(HttpMethod.GET, "/fournisseurs")
+                        .hasAnyRole(PmeAccess.SUPPLIER_PORTAL)
                         // Opérations métier hors administration système.
                         .requestMatchers(
                                 "/fournisseurs",
@@ -112,7 +114,7 @@ public class SecurityConfig {
                         .hasAnyRole(PmeAccess.KPI_READ)
                         .requestMatchers(HttpMethod.POST, "/statistiques/**").hasAnyRole(PmeAccess.STATS_WRITE)
                         // Dashboard connecté
-                        .requestMatchers("/", "/dashboard").authenticated()
+                        .requestMatchers("/", "/dashboard").hasAnyRole(PmeAccess.KPI_READ)
                         // Tout le reste : connexion obligatoire
                         .anyRequest().authenticated()
                 )
@@ -123,7 +125,11 @@ public class SecurityConfig {
                         .loginPage("/login")
                         // FIX CRITIQUE : URL différente de loginPage → évite la boucle
                         .loginProcessingUrl("/login-process")
-                        .defaultSuccessUrl("/dashboard", true)
+                        .successHandler((request, response, authentication) -> {
+                            boolean fournisseur = authentication.getAuthorities().stream()
+                                    .anyMatch(a -> com.microbiz.model.PmeRole.FOURNISSEUR.getAuthority().equals(a.getAuthority()));
+                            response.sendRedirect(fournisseur ? "/fournisseurs" : "/dashboard");
+                        })
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )

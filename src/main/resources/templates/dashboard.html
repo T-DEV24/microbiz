@@ -180,7 +180,7 @@
     <a href="/ventes" class="nav-link" th:classappend="${active} == 'ventes' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMMERCIAL')"><i class="bi bi-bag-check"></i> Ventes</a>
     <a href="/produits" class="nav-link" th:classappend="${active} == 'produits' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMMERCIAL')"><i class="bi bi-box-seam"></i> Produits</a>
     <a href="/clients" class="nav-link" th:classappend="${active} == 'clients' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMMERCIAL')"><i class="bi bi-people"></i> Clients</a>
-    <a href="/fournisseurs" class="nav-link" th:classappend="${active} == 'fournisseurs' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER')"><i class="bi bi-truck"></i> Fournisseurs</a>
+    <a href="/fournisseurs" class="nav-link" th:classappend="${active} == 'fournisseurs' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','FOURNISSEUR')"><i class="bi bi-truck"></i> Fournisseurs</a>
     <a href="/mouvements-stock" class="nav-link" th:classappend="${active} == 'mouvements-stock' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER')"><i class="bi bi-arrow-left-right"></i> Mouvements stock</a>
     <a href="/entreprise" class="nav-link" th:classappend="${active} == 'entreprise' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER')"><i class="bi bi-building"></i> Entreprise</a>
     <a href="/devises" class="nav-link" th:classappend="${active} == 'devises' ? ' active' : ''" sec:authorize="hasAnyRole('ADMIN','GERANT','USER','COMPTABLE')"><i class="bi bi-currency-exchange"></i> Devises</a>

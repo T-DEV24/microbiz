@@ -16,6 +16,7 @@ public class PmeAccess {
     public static final String[] FINANCE_WRITE = PmeRole.securityNames(PmeRole.ADMIN, PmeRole.GERANT, PmeRole.USER, PmeRole.COMPTABLE);
     public static final String[] OPERATIONS = PmeRole.securityNames(PmeRole.ADMIN, PmeRole.GERANT, PmeRole.USER);
     public static final String[] SALES = PmeRole.securityNames(PmeRole.ADMIN, PmeRole.GERANT, PmeRole.USER, PmeRole.COMMERCIAL);
+    public static final String[] SUPPLIER_PORTAL = PmeRole.securityNames(PmeRole.ADMIN, PmeRole.GERANT, PmeRole.USER, PmeRole.FOURNISSEUR);
     public static final String[] KPI_READ = PmeRole.securityNames(PmeRole.ADMIN, PmeRole.GERANT, PmeRole.USER, PmeRole.COMPTABLE, PmeRole.COMMERCIAL);
     public static final String[] STATS_WRITE = PmeRole.securityNames(PmeRole.ADMIN, PmeRole.GERANT, PmeRole.USER);
 
@@ -29,6 +30,10 @@ public class PmeAccess {
 
     public boolean canAccessOperations(Authentication authentication) {
         return hasAny(authentication, PmeRole.ADMIN, PmeRole.GERANT, PmeRole.USER);
+    }
+
+    public boolean canAccessSupplierPortal(Authentication authentication) {
+        return hasAny(authentication, PmeRole.ADMIN, PmeRole.GERANT, PmeRole.USER, PmeRole.FOURNISSEUR);
     }
 
     public boolean canReadInvoices(Authentication authentication) {

@@ -13,6 +13,7 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private ProduitRepository produitRepo;
     @Autowired private CategorieRepository categorieRepo;
     @Autowired private ClientRepository clientRepo;
+    @Autowired private FournisseurRepository fournisseurRepo;
     @Autowired private PasswordEncoder passwordEncoder;
     @Value("${microbiz.seed.demo-data:false}") private boolean seedDemoData;
     @Value("${microbiz.seed.admin-password:}") private String adminPassword;
@@ -71,11 +72,20 @@ public class DataInitializer implements CommandLineRunner {
                     .tenantKey("default")
                     .build();
             utilisateurRepo.save(commercial);
+            Utilisateur fournisseurUser = Utilisateur.builder()
+                    .nom("Distrib Pro")
+                    .email("fournisseur@microbiz.com")
+                    .motDePasse(passwordEncoder.encode(userPassword))
+                    .role(PmeRole.FOURNISSEUR.getAuthority())
+                    .tenantKey("default")
+                    .build();
+            utilisateurRepo.save(fournisseurUser);
             System.out.println("  ADMIN -> admin@microbiz.com / [mot de passe via variable d'environnement]");
             System.out.println("  USER  -> jean@microbiz.com  / [mot de passe via variable d'environnement]");
             System.out.println("  GER   -> gerant@microbiz.com / [mot de passe via variable d'environnement]");
             System.out.println("  CPT   -> comptable@microbiz.com / [mot de passe via variable d'environnement]");
             System.out.println("  COM   -> commercial@microbiz.com / [mot de passe via variable d'environnement]");
+            System.out.println("  FOUR  -> fournisseur@microbiz.com / [mot de passe via variable d'environnement]");
         }
         // Produits de demo
         if (produitRepo.count() == 0) {
@@ -97,6 +107,15 @@ public class DataInitializer implements CommandLineRunner {
             produitRepo.save(Produit.builder().nom("Eau de coco")
                     .categorie("Boissons").prixVente(600.0)
                     .coutRevient(280.0).stockActuel(5).tenantKey("default").build());
+        }
+        // Fournisseur de demo pour le portail fournisseur
+        if (fournisseurRepo.count() == 0) {
+            fournisseurRepo.save(Fournisseur.builder()
+                    .nom("Distrib Pro")
+                    .telephone("+237 650 000 111")
+                    .email("fournisseur@microbiz.com")
+                    .tenantKey("default")
+                    .build());
         }
         // Clients de demo
         if (clientRepo.count() == 0) {
