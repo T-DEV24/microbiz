@@ -441,3 +441,66 @@ form[style*="display: flex"],
     min-width: 540px;
   }
 }
+
+/* Sidebar navigation must stay fully reachable on shorter screens */
+.sidebar {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar nav,
+.sidebar .flex-grow-1.py-2 {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.28) transparent;
+}
+
+.sidebar nav::-webkit-scrollbar,
+.sidebar .flex-grow-1.py-2::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar nav::-webkit-scrollbar-track,
+.sidebar .flex-grow-1.py-2::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar nav::-webkit-scrollbar-thumb,
+.sidebar .flex-grow-1.py-2::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.24);
+  border-radius: 999px;
+}
+
+.sidebar-footer,
+.sidebar > .p-3:last-child {
+  flex: 0 0 auto;
+}
+
+@media (max-height: 760px) {
+  .sidebar .nav-link {
+    padding-top: 7px !important;
+    padding-bottom: 7px !important;
+  }
+
+  .nav-section {
+    padding-top: 10px !important;
+  }
+}
+
+@media (max-height: 640px) {
+  .sidebar .nav-link {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    font-size: 12px !important;
+  }
+
+  .nav-section {
+    padding-top: 8px !important;
+    padding-bottom: 2px !important;
+  }
+}
